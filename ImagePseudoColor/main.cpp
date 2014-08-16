@@ -1,0 +1,10 @@
+#include "imagepseudocolor.h"
+#include <QtGui/QApplication>
+
+int main(int argc, char *argv[])
+{
+	QApplication a(argc, argv);
+	ImagePseudoColor w;
+	w.show();
+	return a.exec();
+}
