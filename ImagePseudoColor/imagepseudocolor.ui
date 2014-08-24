@@ -10,10 +10,16 @@
     <height>588</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>934</width>
+    <height>588</height>
+   </size>
+  </property>
   <property name="maximumSize">
    <size>
     <width>934</width>
-    <height>597</height>
+    <height>588</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -26,7 +32,7 @@
       <x>10</x>
       <y>10</y>
       <width>81</width>
-      <height>31</height>
+      <height>21</height>
      </rect>
     </property>
     <property name="readOnly">
@@ -37,7 +43,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>50</y>
+      <y>40</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -50,9 +56,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>90</y>
+      <y>80</y>
       <width>81</width>
-      <height>31</height>
+      <height>21</height>
      </rect>
     </property>
     <property name="readOnly">
@@ -63,7 +69,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>130</y>
+      <y>110</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -76,10 +82,13 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>170</y>
+      <y>150</y>
       <width>81</width>
-      <height>31</height>
+      <height>21</height>
      </rect>
+    </property>
+    <property name="text">
+     <string>0</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButtonClear">
@@ -108,20 +117,7 @@
      <string>Save</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButtonSmooth">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>290</y>
-      <width>81</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Smooth</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="SmoothLineEdit">
+   <widget class="QPushButton" name="pushButtonFilter">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -129,6 +125,22 @@
       <width>81</width>
       <height>31</height>
      </rect>
+    </property>
+    <property name="text">
+     <string>Filter</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="FilterLineEdit">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>220</y>
+      <width>81</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>1</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButtonQuit">
@@ -161,7 +173,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>210</y>
+      <y>180</y>
       <width>81</width>
       <height>31</height>
      </rect>
@@ -174,7 +186,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>330</y>
+      <y>290</y>
       <width>81</width>
       <height>22</height>
      </rect>
@@ -193,7 +205,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>360</y>
+      <y>320</y>
       <width>81</width>
       <height>22</height>
      </rect>
@@ -205,7 +217,7 @@
      <number>100</number>
     </property>
    </widget>
-   <widget class="QLabel" name="photographyLabel">
+   <widget class="QLabel" name="photographLabel">
     <property name="geometry">
      <rect>
       <x>110</x>
@@ -215,7 +227,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Photography</string>
+     <string>Photograph</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -254,6 +266,19 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButtonPseudoColor">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>350</y>
+      <width>81</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>PseudoColor</string>
     </property>
    </widget>
   </widget>

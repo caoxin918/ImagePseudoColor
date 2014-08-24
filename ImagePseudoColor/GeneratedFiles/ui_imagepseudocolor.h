@@ -17,6 +17,7 @@
 #include <QtGui/QLabel>
 #include <QtGui/QLineEdit>
 #include <QtGui/QMainWindow>
+#include <QtGui/QMenu>
 #include <QtGui/QMenuBar>
 #include <QtGui/QPushButton>
 #include <QtGui/QSpinBox>
@@ -36,56 +37,59 @@ public:
     QLineEdit *SubstractLineEdit;
     QPushButton *pushButtonClear;
     QPushButton *pushButtonSave;
-    QPushButton *pushButtonSmooth;
-    QLineEdit *SmoothLineEdit;
+    QPushButton *pushButtonFilter;
+    QLineEdit *FilterLineEdit;
     QPushButton *pushButtonQuit;
     QPushButton *pushButtonFusion;
     QPushButton *pushButtonSubstract;
     QSpinBox *spinBoxHighValue;
     QSpinBox *spinBoxLowValue;
-    QLabel *photographyLabel;
+    QLabel *photographLabel;
     QLabel *luminescenceLabel;
     QLabel *fusionImageLabel;
+    QPushButton *pushButtonPseudoColor;
     QMenuBar *menuBar;
+    QMenu *menuAbout;
     QStatusBar *statusBar;
 
     void setupUi(QMainWindow *ImagePseudoColorClass)
     {
         if (ImagePseudoColorClass->objectName().isEmpty())
             ImagePseudoColorClass->setObjectName(QString::fromUtf8("ImagePseudoColorClass"));
-        ImagePseudoColorClass->resize(934, 597);
-        ImagePseudoColorClass->setMaximumSize(QSize(934, 597));
+        ImagePseudoColorClass->resize(934, 588);
+        ImagePseudoColorClass->setMinimumSize(QSize(934, 588));
+        ImagePseudoColorClass->setMaximumSize(QSize(934, 588));
         centralWidget = new QWidget(ImagePseudoColorClass);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         PhotographLineEdit = new QLineEdit(centralWidget);
         PhotographLineEdit->setObjectName(QString::fromUtf8("PhotographLineEdit"));
-        PhotographLineEdit->setGeometry(QRect(10, 10, 81, 31));
+        PhotographLineEdit->setGeometry(QRect(10, 10, 81, 21));
         PhotographLineEdit->setReadOnly(true);
         pushButtonPhotograph = new QPushButton(centralWidget);
         pushButtonPhotograph->setObjectName(QString::fromUtf8("pushButtonPhotograph"));
-        pushButtonPhotograph->setGeometry(QRect(10, 50, 81, 31));
+        pushButtonPhotograph->setGeometry(QRect(10, 40, 81, 31));
         LuminescenceLineEdit = new QLineEdit(centralWidget);
         LuminescenceLineEdit->setObjectName(QString::fromUtf8("LuminescenceLineEdit"));
-        LuminescenceLineEdit->setGeometry(QRect(10, 90, 81, 31));
+        LuminescenceLineEdit->setGeometry(QRect(10, 80, 81, 21));
         LuminescenceLineEdit->setReadOnly(true);
         pushButtonLuminescence = new QPushButton(centralWidget);
         pushButtonLuminescence->setObjectName(QString::fromUtf8("pushButtonLuminescence"));
-        pushButtonLuminescence->setGeometry(QRect(10, 130, 81, 31));
+        pushButtonLuminescence->setGeometry(QRect(10, 110, 81, 31));
         SubstractLineEdit = new QLineEdit(centralWidget);
         SubstractLineEdit->setObjectName(QString::fromUtf8("SubstractLineEdit"));
-        SubstractLineEdit->setGeometry(QRect(10, 170, 81, 31));
+        SubstractLineEdit->setGeometry(QRect(10, 150, 81, 21));
         pushButtonClear = new QPushButton(centralWidget);
         pushButtonClear->setObjectName(QString::fromUtf8("pushButtonClear"));
         pushButtonClear->setGeometry(QRect(10, 470, 81, 31));
         pushButtonSave = new QPushButton(centralWidget);
         pushButtonSave->setObjectName(QString::fromUtf8("pushButtonSave"));
         pushButtonSave->setGeometry(QRect(10, 430, 81, 31));
-        pushButtonSmooth = new QPushButton(centralWidget);
-        pushButtonSmooth->setObjectName(QString::fromUtf8("pushButtonSmooth"));
-        pushButtonSmooth->setGeometry(QRect(10, 290, 81, 31));
-        SmoothLineEdit = new QLineEdit(centralWidget);
-        SmoothLineEdit->setObjectName(QString::fromUtf8("SmoothLineEdit"));
-        SmoothLineEdit->setGeometry(QRect(10, 250, 81, 31));
+        pushButtonFilter = new QPushButton(centralWidget);
+        pushButtonFilter->setObjectName(QString::fromUtf8("pushButtonFilter"));
+        pushButtonFilter->setGeometry(QRect(10, 250, 81, 31));
+        FilterLineEdit = new QLineEdit(centralWidget);
+        FilterLineEdit->setObjectName(QString::fromUtf8("FilterLineEdit"));
+        FilterLineEdit->setGeometry(QRect(10, 220, 81, 21));
         pushButtonQuit = new QPushButton(centralWidget);
         pushButtonQuit->setObjectName(QString::fromUtf8("pushButtonQuit"));
         pushButtonQuit->setGeometry(QRect(10, 510, 81, 31));
@@ -94,22 +98,22 @@ public:
         pushButtonFusion->setGeometry(QRect(10, 390, 81, 31));
         pushButtonSubstract = new QPushButton(centralWidget);
         pushButtonSubstract->setObjectName(QString::fromUtf8("pushButtonSubstract"));
-        pushButtonSubstract->setGeometry(QRect(10, 210, 81, 31));
+        pushButtonSubstract->setGeometry(QRect(10, 180, 81, 31));
         spinBoxHighValue = new QSpinBox(centralWidget);
         spinBoxHighValue->setObjectName(QString::fromUtf8("spinBoxHighValue"));
-        spinBoxHighValue->setGeometry(QRect(10, 330, 81, 22));
+        spinBoxHighValue->setGeometry(QRect(10, 290, 81, 22));
         spinBoxHighValue->setMinimum(1);
         spinBoxHighValue->setMaximum(65535);
         spinBoxHighValue->setSingleStep(100);
         spinBoxLowValue = new QSpinBox(centralWidget);
         spinBoxLowValue->setObjectName(QString::fromUtf8("spinBoxLowValue"));
-        spinBoxLowValue->setGeometry(QRect(10, 360, 81, 22));
+        spinBoxLowValue->setGeometry(QRect(10, 320, 81, 22));
         spinBoxLowValue->setMaximum(65534);
         spinBoxLowValue->setSingleStep(100);
-        photographyLabel = new QLabel(centralWidget);
-        photographyLabel->setObjectName(QString::fromUtf8("photographyLabel"));
-        photographyLabel->setGeometry(QRect(110, 20, 250, 250));
-        photographyLabel->setAlignment(Qt::AlignCenter);
+        photographLabel = new QLabel(centralWidget);
+        photographLabel->setObjectName(QString::fromUtf8("photographLabel"));
+        photographLabel->setGeometry(QRect(110, 20, 250, 250));
+        photographLabel->setAlignment(Qt::AlignCenter);
         luminescenceLabel = new QLabel(centralWidget);
         luminescenceLabel->setObjectName(QString::fromUtf8("luminescenceLabel"));
         luminescenceLabel->setGeometry(QRect(110, 280, 250, 250));
@@ -119,14 +123,21 @@ public:
         fusionImageLabel->setGeometry(QRect(380, 10, 524, 524));
         fusionImageLabel->setLayoutDirection(Qt::LeftToRight);
         fusionImageLabel->setAlignment(Qt::AlignCenter);
+        pushButtonPseudoColor = new QPushButton(centralWidget);
+        pushButtonPseudoColor->setObjectName(QString::fromUtf8("pushButtonPseudoColor"));
+        pushButtonPseudoColor->setGeometry(QRect(10, 350, 81, 31));
         ImagePseudoColorClass->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(ImagePseudoColorClass);
         menuBar->setObjectName(QString::fromUtf8("menuBar"));
         menuBar->setGeometry(QRect(0, 0, 934, 23));
+        menuAbout = new QMenu(menuBar);
+        menuAbout->setObjectName(QString::fromUtf8("menuAbout"));
         ImagePseudoColorClass->setMenuBar(menuBar);
         statusBar = new QStatusBar(ImagePseudoColorClass);
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
         ImagePseudoColorClass->setStatusBar(statusBar);
+
+        menuBar->addAction(menuAbout->menuAction());
 
         retranslateUi(ImagePseudoColorClass);
 
@@ -138,15 +149,19 @@ public:
         ImagePseudoColorClass->setWindowTitle(QApplication::translate("ImagePseudoColorClass", "ImagePseudoColor", 0, QApplication::UnicodeUTF8));
         pushButtonPhotograph->setText(QApplication::translate("ImagePseudoColorClass", "Photograph", 0, QApplication::UnicodeUTF8));
         pushButtonLuminescence->setText(QApplication::translate("ImagePseudoColorClass", "Luminescence", 0, QApplication::UnicodeUTF8));
+        SubstractLineEdit->setText(QApplication::translate("ImagePseudoColorClass", "0", 0, QApplication::UnicodeUTF8));
         pushButtonClear->setText(QApplication::translate("ImagePseudoColorClass", "Clear", 0, QApplication::UnicodeUTF8));
         pushButtonSave->setText(QApplication::translate("ImagePseudoColorClass", "Save", 0, QApplication::UnicodeUTF8));
-        pushButtonSmooth->setText(QApplication::translate("ImagePseudoColorClass", "Smooth", 0, QApplication::UnicodeUTF8));
+        pushButtonFilter->setText(QApplication::translate("ImagePseudoColorClass", "Filter", 0, QApplication::UnicodeUTF8));
+        FilterLineEdit->setText(QApplication::translate("ImagePseudoColorClass", "1", 0, QApplication::UnicodeUTF8));
         pushButtonQuit->setText(QApplication::translate("ImagePseudoColorClass", "Quit", 0, QApplication::UnicodeUTF8));
         pushButtonFusion->setText(QApplication::translate("ImagePseudoColorClass", "Fusion", 0, QApplication::UnicodeUTF8));
         pushButtonSubstract->setText(QApplication::translate("ImagePseudoColorClass", "Substract", 0, QApplication::UnicodeUTF8));
-        photographyLabel->setText(QApplication::translate("ImagePseudoColorClass", "Photography", 0, QApplication::UnicodeUTF8));
+        photographLabel->setText(QApplication::translate("ImagePseudoColorClass", "Photograph", 0, QApplication::UnicodeUTF8));
         luminescenceLabel->setText(QApplication::translate("ImagePseudoColorClass", "Luminescence", 0, QApplication::UnicodeUTF8));
         fusionImageLabel->setText(QApplication::translate("ImagePseudoColorClass", "Fusion", 0, QApplication::UnicodeUTF8));
+        pushButtonPseudoColor->setText(QApplication::translate("ImagePseudoColorClass", "PseudoColor", 0, QApplication::UnicodeUTF8));
+        menuAbout->setTitle(QApplication::translate("ImagePseudoColorClass", "Help", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 
 };
