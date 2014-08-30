@@ -4,6 +4,7 @@
 #include <QtGui/QMainWindow>
 #include "ui_imagepseudocolor.h"
 #include "QImage"
+#include "qthread.h"
 
 #include "itkImage.h"
 #include "itkImageFileReader.h"
@@ -32,6 +33,21 @@ typedef itk::ImageRegionIterator<ImageType> IteratorType;//图像迭代器
 typedef itk::TIFFImageIO TIFFIOType;//IO限定为tiff格式图像
 typedef itk::MedianImageFilter<ImageType,ImageType> MedianFilterType;//图像滤波器
 
+class FilterThread:public QThread
+{
+public:
+	int kernelSize;
+	void run();
+	ImageType::Pointer readImage(QString filename);//read a image file using ITK，暂时没用的
+	void writeImage(ImageType* outputImage, const char* filename);//write a image to disk using ITK，暂时没用到
+	
+private:
+	ImageType::Pointer tempITKLuminesenceData;//临时用来处理荧光图像的图像数据，基于ITK
+	TIFFIOType::Pointer tiffIO;//ITK读取以及存储数据的格式限定
+	MedianFilterType::Pointer filter;
+};
+
+
 class ImagePseudoColor : public QMainWindow
 {
 	Q_OBJECT
@@ -42,6 +58,7 @@ public:
 
 private:
 	Ui::ImagePseudoColorClass ui;
+	FilterThread filterThread;
 
 private slots:
 	void on_pushButton_photograph_clicked();
@@ -85,11 +102,13 @@ private:
 
 private:
 	void initial();
-	ImageType::Pointer readImage(QString filename);//read a image file using ITK
-	void writeImage(ImageType* outputImage, const char* filename);//write a image to disk using ITK
-	PixelType minusPixel(PixelType pixelValue,PixelType subValue){return pixelValue>subValue ? (pixelValue-subValue):0;}
+	ImageType::Pointer readImage(QString filename);//read a image file using ITK，暂时没用的
+	void writeImage(ImageType* outputImage, const char* filename);//write a image to disk using ITK，暂时没用到
+	PixelType minusPixel(PixelType pixelValue,PixelType subValue){return pixelValue>subValue ? (pixelValue-subValue):0;}//没用到
 	bool showLuminescenceData(QString fileName);
 	bool showPhotographData(QString fileName);
+
 };
+
 
 #endif // IMAGEPSEUDOCOLOR_H

@@ -7,13 +7,48 @@
 #include <io.h>
 #include <iostream>
 
+#include <vector>
+#include <algorithm>
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include "opencv2/opencv.hpp"
 using namespace cv;
-
-
-
 using namespace std;
+
+ImageType::Pointer FilterThread::readImage(QString filename)
+{
+	string temp1=filename.toStdString();
+	const char* temp2=temp1.c_str();
+	ReaderType::Pointer reader=ReaderType::New();
+	reader->SetFileName(temp2);
+	reader->SetImageIO(tiffIO);
+	reader->Update();
+	return reader->GetOutput();
+}
+
+void FilterThread::writeImage(ImageType* outputImage, const char* filename)
+{
+	WriterType::Pointer writer=WriterType::New();
+	writer->SetFileName(filename);
+	writer->SetImageIO(tiffIO);
+	writer->SetInput(outputImage);
+	writer->Update();
+}
+void FilterThread::run()
+{
+
+	//以下是利用ITK来进行中值滤波的代码
+	tempITKLuminesenceData=ImageType::New();
+	tempITKLuminesenceData=readImage(".//tempFiles//substractData.tif");
+	ImageType::SizeType filterRadius;
+	filterRadius[0]=filterRadius[1]=kernelSize;
+	filter->SetInput(tempITKLuminesenceData);
+	filter->SetRadius(filterRadius);
+	filter->Update();
+	writeImage(filter->GetOutput(),".//tempFiles//filteredData.tif");
+	
+}
+
 ImagePseudoColor::ImagePseudoColor(QWidget *parent, Qt::WFlags flags)
 	: QMainWindow(parent, flags)
 {
@@ -57,6 +92,8 @@ void ImagePseudoColor::initial()
 	photographFileName="";
 	luminescneceFileName="";
 
+
+//	filterThread=new FilterThread();
 	QRegExp regx("[0-9]+$");
 	QValidator *validator1 = new QRegExpValidator(regx,ui.SubstractLineEdit);
 	ui.SubstractLineEdit->setValidator(validator1);
@@ -104,6 +141,9 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 		if(luminescenceFlag==true)
 		{
 			luminescenceFlag=false;
+			substractFlag=false;
+			filterFlag=false;
+			fusionFlag=false;
 			ui.luminescenceLabel->setText("luminescence");
 			delete luminescneceImage;
 			luminescneceFileName="";
@@ -116,6 +156,9 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 		{
 			delete luminescneceImage;
 			luminescenceFlag=false;
+			substractFlag=false;
+			filterFlag=false;
+			fusionFlag=false;
 			return;
 		}
 		luminescneceFileName=path;
@@ -146,29 +189,10 @@ void ImagePseudoColor::on_pushButton_substract_clicked()
 	string temp1=luminescneceFileName.toStdString();
 	const char* temp2=temp1.c_str();
 	Mat inputImageData=imread(temp1,CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
-	PixelType *temppp= inputImageData.ptr<PixelType>(1);
 	Mat outputImageData=inputImageData-substractValue;
-	//cvSub(inputImageData,);
-	//medianBlur(inputImageData,outputImageData,substractValue);
 	imwrite(".//tempFiles//substractData.tif",outputImageData);
 	showLuminescenceData(".//tempFiles//substractData.tif");
 	substractFlag=true;
-
-// 	substractValue=temp;//assign the substract value
-// 	tempITKLuminesenceData=NULL;
-// 	tempITKLuminesenceData=ImageType::New();
-// 	tempITKLuminesenceData=readImage(luminescneceFileName);
-// 	IteratorType It(tempITKLuminesenceData,tempITKLuminesenceData->GetRequestedRegion());
-// 	PixelType temp2=0;
-// 	while(!It.IsAtEnd())
-// 	{
-// 		temp2=(minusPixel(It.Get(),substractValue));
-// 		It.Set(temp2);
-// 		++It;
-// 	}
-// 	writeImage(tempITKLuminesenceData,".//tempFiles//substractData.tif");
-// 	showLuminescenceData(".//tempFiles//substractData.tif");
-// 	substractFlag=true;
 }
 
 void ImagePseudoColor::on_pushButton_filter_clicked()
@@ -182,7 +206,7 @@ void ImagePseudoColor::on_pushButton_filter_clicked()
 		fusionFlag=false;
 		return;
 	}
-	if(temp<1 || temp>20)
+	if(temp<1 || temp>110)
 	{
 		QMessageBox::information(NULL,"Warning","The input must be larger than 0 and smaller than 20.");
 		filterFlag=false;
@@ -190,16 +214,59 @@ void ImagePseudoColor::on_pushButton_filter_clicked()
 		return;
 	}
 	filterValue=temp;
-	tempITKLuminesenceData=NULL;
-	tempITKLuminesenceData=ImageType::New();
-	tempITKLuminesenceData=readImage(".//tempFiles//substractData.tif");
-	ImageType::SizeType filterRadius;
-	filterRadius[0]=filterRadius[1]=filterValue;
-	filter->SetInput(tempITKLuminesenceData);
-	filter->SetRadius(filterRadius);
-	filter->Update();
-	writeImage(filter->GetOutput(),".//tempFiles//filteredData.tif");
-	showLuminescenceData(".//tempFiles//filteredData.tif");
+	filterThread.kernelSize=filterValue;
+	filterThread.start();
+// 	Mat inputImageData=imread(".//tempFiles//substractData.tif",CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+// 	Mat outputImageData=inputImageData.clone();
+// 	//以下是自定义的中值滤波代码
+// 	PixelType midElement;
+// 	vector<PixelType> pixelVector(0);
+// 	for(int i=filterValue;i<inputImageData.rows-filterValue;++i)
+// 	{
+// 		for(int j=filterValue;j<inputImageData.cols-filterValue;++j)
+// 		{
+// 			pixelVector.clear();
+// 			for(int ii=i-filterValue;ii<i+filterValue+1;++ii)
+// 			{
+// 				for(int jj=j-filterValue;jj<j+filterValue+1;++jj)
+// 				{
+// 					pixelVector.push_back(inputImageData.at<PixelType>(ii,jj));
+// 				}
+// 			}
+// 			sort(pixelVector.begin(),pixelVector.end());
+// 			outputImageData.at<PixelType>(i,j)=pixelVector.at(pixelVector.size()/2);
+// 		}
+// 	}
+// 	//over
+// 	imwrite(".//tempFiles//filterData.tif",outputImageData);
+ 	showLuminescenceData(".//tempFiles//filterData.tif");
+
+
+// 	int i=inputImageData.rows;
+// 	int j=inputImageData.cols;
+// 	PixelType iiii=inputImageData.at<PixelType>(1024,1024);
+
+//	medianBlur(inputImageData,outputImageData,filterValue);
+// 	//cvSmooth(inputImageData,outputImageData,);
+// // 	IplImage* inputImageData=cvLoadImage(".//tempFiles//filterData.tif",-1);
+// // 	IplImage* outputImageData=cvCreateImage(cvSize(inputImageData->width,inputImageData->height),inputImageData->depth,1);
+// // 	cvSmooth(inputImageData,outputImageData,CV_MEDIAN,filterValue,filterValue,0,0);
+// // 	cvSaveImage(".//tempFiles//filterData.tif",outputImageData);
+// 	imwrite(".//tempFiles//filterData.tif",outputImageData);
+// 	showLuminescenceData(".//tempFiles//filterData.tif");
+
+//以下是利用ITK来进行中值滤波的代码
+// 	filterFlag=true;
+// 	tempITKLuminesenceData=NULL;
+// 	tempITKLuminesenceData=ImageType::New();
+// 	tempITKLuminesenceData=readImage(".//tempFiles//substractData.tif");
+// 	ImageType::SizeType filterRadius;
+// 	filterRadius[0]=filterRadius[1]=filterValue;
+// 	filter->SetInput(tempITKLuminesenceData);
+// 	filter->SetRadius(filterRadius);
+// 	filter->Update();
+// 	writeImage(filter->GetOutput(),".//tempFiles//filteredData.tif");
+// 	showLuminescenceData(".//tempFiles//filteredData.tif");
 }
 
 void ImagePseudoColor::on_pushButton_fusion_clicked()
