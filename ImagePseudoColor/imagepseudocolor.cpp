@@ -35,19 +35,472 @@ void FilterThread::writeImage(ImageType* outputImage, const char* filename)
 	writer->Update();
 }
 void FilterThread::run()
-{
-
+{	
 	//以下是利用ITK来进行中值滤波的代码
 	tempITKLuminesenceData=ImageType::New();
+	tiffIO=TIFFIOType::New();
 	tempITKLuminesenceData=readImage(".//tempFiles//substractData.tif");
 	ImageType::SizeType filterRadius;
 	filterRadius[0]=filterRadius[1]=kernelSize;
+	filter=MedianFilterType::New();
 	filter->SetInput(tempITKLuminesenceData);
 	filter->SetRadius(filterRadius);
 	filter->Update();
-	writeImage(filter->GetOutput(),".//tempFiles//filteredData.tif");
+	writeImage(filter->GetOutput(),".//tempFiles//filterData.tif");
 	
+	emit done();
 }
+
+ImageType::Pointer PseudocolorThread::readImage(QString filename)
+{
+	string temp1=filename.toStdString();
+	const char* temp2=temp1.c_str();
+	ReaderType::Pointer reader=ReaderType::New();
+	reader->SetFileName(temp2);
+	reader->SetImageIO(tiffIO);
+	reader->Update();
+	return reader->GetOutput();
+}
+void PseudocolorThread::copyImageData(ImageType::Pointer inputData,ImageType::Pointer outputData)
+{
+	outputData->SetRegions(inputData->GetRequestedRegion());
+	outputData->CopyInformation(inputData);
+	outputData->Allocate();
+
+	IteratorType outputIt(outputData,outputData->GetRequestedRegion());
+	ConstIteratorType inputIt(inputData,inputData->GetRequestedRegion());
+	while(!inputIt.IsAtEnd())
+	{
+		outputIt.Set(inputIt.Get());
+		++inputIt;
+		++outputIt;
+	}
+}
+UnChImageType::Pointer PseudocolorThread::rescaleImage(ImageType::Pointer imageData,PixelType minValue,PixelType maxValue)
+{
+	RescaleFilterType::Pointer rescaleFilter=RescaleFilterType::New();
+	rescaleFilter->SetInput(imageData);
+	rescaleFilter->SetOutputMinimum(minValue);
+	rescaleFilter->SetOutputMaximum(maxValue);
+	rescaleFilter->Update();
+	CastFilterType::Pointer castFilter=CastFilterType::New();
+	castFilter->SetInput(rescaleFilter->GetOutput());
+	castFilter->Update();
+	return castFilter->GetOutput();
+}
+void PseudocolorThread::writeRGBImage(RGBImageType* outputImage,const char* filename)
+{
+	RGBWriterType::Pointer writer=RGBWriterType::New();
+	writer->SetFileName(filename);
+	writer->SetImageIO(tiffIO);
+	writer->SetInput(outputImage);
+	writer->Update();
+}
+void PseudocolorThread::sliceInputLuminescneceImage(ImageType::Pointer inputImage,PixelType HValue,PixelType LValue)
+{
+	UnChImageType::Pointer sliced8BitImageData=UnChImageType::New();
+	/******************************************************
+下面的一段是将荧光图像映射到0-255区间内，得到0-255的灰度图
+这里记录下基本原理，以防遗忘：
+这里的inputimage是指上一步，也就是滤波处理后生成的图像数据；
+首先，自定义一个临时图像数据，tempImage,最后会在这个的基础上
+生成8位的灰度图；
+然后的while循环有两个目的，1是找到图像中的最大和最小像素点的数值，2是将图像的所有像素点的数值约束在给定的colorbar数值范围内，这里是指当图像的最大值大于colorbar上限，或图像最小值低于colorbar下限的情况
+最后，将每个像素点映射到0-255区间中的一个点，该数值是原始图像中像素点之余给点的colorbar，归一到0-255区间后的数值
+注意：为了防止设置的colorbar上下区间太大，从而致使每个颜色区间的数值太高，进而致使低像素点被归类到0这一数值，有必要进行相关的矫正（在最后）
+	*****************************************************/
+	ImageType::Pointer tempImage=ImageType::New();
+	tempImage->CopyInformation(inputImage);
+	copyImageData(inputImage,tempImage);
+	IteratorType tempIt(tempImage,tempImage->GetRequestedRegion());
+// 	PixelType minImageValue,maxImageValue;
+// 	minImageValue=65535;
+// 	maxImageValue=0;
+	while(!tempIt.IsAtEnd())
+	{
+		if(tempIt.Get()>=HValue)
+			tempIt.Set(HValue);
+		if(tempIt.Get()<=LValue)
+			tempIt.Set(LValue);
+// 		if(tempIt.Get()>maxImageValue)
+// 			maxImageValue=tempIt.Get();
+// 		if(tempIt.Get()<minImageValue)
+// 			minImageValue=tempIt.Get();
+		++tempIt;
+	}
+	int sliceMin,sliceMax;
+	sliceMax=(int)(((float)colorbarHighValue-LValue)/((float)HValue-LValue)*255);
+	sliceMin=(int)(((float)colorbarLowValue-LValue)/((float)HValue-LValue)*255);
+	if(sliceMin==0)
+		sliceMin=1;//方便进行接下来的矫正，为了避免并不小于lvalue的像素点被划分为0层的情况
+	if(sliceMax<2)
+		sliceMax=2;
+	sliced8BitImageData=rescaleImage(tempImage,sliceMin,sliceMax);
+	UnChIteratorType sliceIt(sliced8BitImageData,sliced8BitImageData->GetRequestedRegion());
+	ConstIteratorType inputIt(inputImage,inputImage->GetRequestedRegion());
+	while(!inputIt.IsAtEnd())
+	{
+		if(inputIt.Get()<LValue)
+		{
+			sliceIt.Set(0);
+		}
+		if(inputIt.Get()>HValue)
+		{
+			sliceIt.Set(255);
+		}
+		++inputIt;
+		++sliceIt;
+	}
+	write8BitImage(sliced8BitImageData,".//tempFiles//luminescnece8BitImage.tif");
+}
+void PseudocolorThread::write8BitImage(UnChImageType* outputImage, const char* filename)
+{
+	UnChWriterType::Pointer writer=UnChWriterType::New();
+	writer->SetFileName(filename);
+	//TIFFIOType *tiffIO=TIFFIOType::New();
+	writer->SetImageIO(tiffIO);
+	writer->SetInput(outputImage);
+	writer->Update();
+}
+void PseudocolorThread::writeRGBAImage(RGBAImageType* outputImage,const char* filename)
+{
+	RGBAWriterType::Pointer writer=RGBAWriterType::New();
+	writer->SetFileName(filename);
+	writer->SetImageIO(PNGIOType::New());
+	writer->SetInput(outputImage);
+	writer->Update();
+}
+void PseudocolorThread::run()
+{
+	PixelType maxValue;
+	PixelType minValue;
+	inputImageData=ImageType::New();
+	tiffIO=TIFFIOType::New();
+	inputImageData=readImage(".//tempFiles//filterData.tif");
+	sliceInputLuminescneceImage(inputImageData,colorbarHighValue,colorbarLowValue);//将荧光图片做成0-255范围的灰度图，保存为luminescnece8BitImage.tif
+	UnChImageType* unCharImageData=UnChImageType::New();
+	UnChReaderType::Pointer UnChReader=UnChReaderType::New();
+	UnChReader->SetFileName(".//tempFiles//luminescnece8BitImage.tif");
+	UnChReader->SetImageIO(tiffIO);
+	UnChReader->Update();
+	unCharImageData=UnChReader->GetOutput();
+	RGBFilterType::Pointer rgbfilter = RGBFilterType::New();
+	rgbfilter->SetInput(unCharImageData);
+	rgbfilter->SetColormap( RGBFilterType::Jet );
+	rgbfilter->Update();
+	RGBImageType* rgbImageData=RGBImageType::New();
+	rgbImageData=rgbfilter->GetOutput();
+	UnChIteratorType It(unCharImageData,unCharImageData->GetRequestedRegion());
+	RGBIteratortype RGBIt(rgbImageData,rgbImageData->GetRequestedRegion());
+	//初始化colormap数据
+	float colorMapJetData[255][3]=
+	{
+		0,0,0.5156,
+		0,0,0.5313,
+		0,0,0.5469,
+		0,0,0.5625,
+		0,0,0.5781,
+		0,0,0.5938,
+		0,0,0.6094,
+		0,0,0.6250,
+		0,0,0.6406,
+		0,0,0.6563,
+		0,0,0.6719,
+		0,0,0.6875,
+		0,0,0.7031,
+		0,0,0.7188,
+		0,0,0.7344,
+		0,0,0.7500,
+		0,0,0.7656,
+		0,0,0.7813,
+		0,0,0.7969,
+		0,0,0.8125,
+		0,0,0.8281,
+		0,0,0.8438,
+		0,0,0.8594,
+		0,0,0.8750,
+		0,0,0.8906,
+		0,0,0.9063,
+		0,0,0.9219,
+		0,0,0.9375,
+		0,0,0.9531,
+		0,0,0.9688,
+		0,0,0.9844,
+		0,0,1.0000,
+		0,0.0156,1.0000,
+		0,0.0313,1.0000,
+		0,0.0469,1.0000,
+		0,0.0625,1.0000,
+		0,0.0781,1.0000,
+		0,0.0938,1.0000,
+		0,0.1094,1.0000,
+		0,0.1250,1.0000,
+		0,0.1406,1.0000,
+		0,0.1563,1.0000,
+		0,0.1719,1.0000,
+		0,0.1875,1.0000,
+		0,0.2031,1.0000,
+		0,0.2188,1.0000,
+		0,0.2344,1.0000,
+		0,0.2500,1.0000,
+		0,0.2656,1.0000,
+		0,0.2813,1.0000,
+		0,0.2969,1.0000,
+		0,0.3125,1.0000,
+		0,0.3281,1.0000,
+		0,0.3438,1.0000,
+		0,0.3594,1.0000,
+		0,0.3750,1.0000,
+		0,0.3906,1.0000,
+		0,0.4063,1.0000,
+		0,0.4219,1.0000,
+		0,0.4375,1.0000,
+		0,0.4531,1.0000,
+		0,0.4688,1.0000,
+		0,0.4844,1.0000,
+		0,0.5000,1.0000,
+		0,0.5156,1.0000,
+		0,0.5313,1.0000,
+		0,0.5469,1.0000,
+		0,0.5625,1.0000,
+		0,0.5781,1.0000,
+		0,0.5938,1.0000,
+		0,0.6094,1.0000,
+		0,0.6250,1.0000,
+		0,0.6406,1.0000,
+		0,0.6563,1.0000,
+		0,0.6719,1.0000,
+		0,0.6875,1.0000,
+		0,0.7031,1.0000,
+		0,0.7188,1.0000,
+		0,0.7344,1.0000,
+		0,0.7500,1.0000,
+		0,0.7656,1.0000,
+		0,0.7813,1.0000,
+		0,0.7969,1.0000,
+		0,0.8125,1.0000,
+		0,0.8281,1.0000,
+		0,0.8438,1.0000,
+		0,0.8594,1.0000,
+		0,0.8750,1.0000,
+		0,0.8906,1.0000,
+		0,0.9063,1.0000,
+		0,0.9219,1.0000,
+		0,0.9375,1.0000,
+		0,0.9531,1.0000,
+		0,0.9688,1.0000,
+		0,0.9844,1.0000,
+		0,1.0000,1.0000,
+		0.0156,1.0000,0.9844,
+		0.0313,1.0000,0.9688,
+		0.0469,1.0000,0.9531,
+		0.0625,1.0000,0.9375,
+		0.0781,1.0000,0.9219,
+		0.0938,1.0000,0.9063,
+		0.1094,1.0000,0.8906,
+		0.1250,1.0000,0.8750,
+		0.1406,1.0000,0.8594,
+		0.1563,1.0000,0.8438,
+		0.1719,1.0000,0.8281,
+		0.1875,1.0000,0.8125,
+		0.2031,1.0000,0.7969,
+		0.2188,1.0000,0.7813,
+		0.2344,1.0000,0.7656,
+		0.2500,1.0000,0.7500,
+		0.2656,1.0000,0.7344,
+		0.2813,1.0000,0.7188,
+		0.2969,1.0000,0.7031,
+		0.3125,1.0000,0.6875,
+		0.3281,1.0000,0.6719,
+		0.3438,1.0000,0.6563,
+		0.3594,1.0000,0.6406,
+		0.3750,1.0000,0.6250,
+		0.3906,1.0000,0.6094,
+		0.4063,1.0000,0.5938,
+		0.4219,1.0000,0.5781,
+		0.4375,1.0000,0.5625,
+		0.4531,1.0000,0.5469,
+		0.4688,1.0000,0.5313,
+		0.4844,1.0000,0.5156,
+		0.5000,1.0000,0.5000,
+		0.5156,1.0000,0.4844,
+		0.5313,1.0000,0.4688,
+		0.5469,1.0000,0.4531,
+		0.5625,1.0000,0.4375,
+		0.5781,1.0000,0.4219,
+		0.5938,1.0000,0.4063,
+		0.6094,1.0000,0.3906,
+		0.6250,1.0000,0.3750,
+		0.6406,1.0000,0.3594,
+		0.6563,1.0000,0.3438,
+		0.6719,1.0000,0.3281,
+		0.6875,1.0000,0.3125,
+		0.7031,1.0000,0.2969,
+		0.7188,1.0000,0.2813,
+		0.7344,1.0000,0.2656,
+		0.7500,1.0000,0.2500,
+		0.7656,1.0000,0.2344,
+		0.7813,1.0000,0.2188,
+		0.7969,1.0000,0.2031,
+		0.8125,1.0000,0.1875,
+		0.8281,1.0000,0.1719,
+		0.8438,1.0000,0.1563,
+		0.8594,1.0000,0.1406,
+		0.8750,1.0000,0.1250,
+		0.8906,1.0000,0.1094,
+		0.9063,1.0000,0.0938,
+		0.9219,1.0000,0.0781,
+		0.9375,1.0000,0.0625,
+		0.9531,1.0000,0.0469,
+		0.9688,1.0000,0.0313,
+		0.9844,1.0000,0.0156,
+		1.0000,1.0000,0,
+		1.0000,0.9844,0,
+		1.0000,0.9688,0,
+		1.0000,0.9531,0,
+		1.0000,0.9375,0,
+		1.0000,0.9219,0,
+		1.0000,0.9063,0,
+		1.0000,0.8906,0,
+		1.0000,0.8750,0,
+		1.0000,0.8594,0,
+		1.0000,0.8438,0,
+		1.0000,0.8281,0,
+		1.0000,0.8125,0,
+		1.0000,0.7969,0,
+		1.0000,0.7813,0,
+		1.0000,0.7656,0,
+		1.0000,0.7500,0,
+		1.0000,0.7344,0,
+		1.0000,0.7188,0,
+		1.0000,0.7031,0,
+		1.0000,0.6875,0,
+		1.0000,0.6719,0,
+		1.0000,0.6563,0,
+		1.0000,0.6406,0,
+		1.0000,0.6250,0,
+		1.0000,0.6094,0,
+		1.0000,0.5938,0,
+		1.0000,0.5781,0,
+		1.0000,0.5625,0,
+		1.0000,0.5469,0,
+		1.0000,0.5313,0,
+		1.0000,0.5156,0,
+		1.0000,0.5000,0,
+		1.0000,0.4844,0,
+		1.0000,0.4688,0,
+		1.0000,0.4531,0,
+		1.0000,0.4375,0,
+		1.0000,0.4219,0,
+		1.0000,0.4063,0,
+		1.0000,0.3906,0,
+		1.0000,0.3750,0,
+		1.0000,0.3594,0,
+		1.0000,0.3438,0,
+		1.0000,0.3281,0,
+		1.0000,0.3125,0,
+		1.0000,0.2969,0,
+		1.0000,0.2813,0,
+		1.0000,0.2656,0,
+		1.0000,0.2500,0,
+		1.0000,0.2344,0,
+		1.0000,0.2188,0,
+		1.0000,0.2031,0,
+		1.0000,0.1875,0,
+		1.0000,0.1719,0,
+		1.0000,0.1563,0,
+		1.0000,0.1406,0,
+		1.0000,0.1250,0,
+		1.0000,0.1094,0,
+		1.0000,0.0938,0,
+		1.0000,0.0781,0,
+		1.0000,0.0625,0,
+		1.0000,0.0469,0,
+		1.0000,0.0313,0,
+		1.0000,0.0156,0,
+		1.0000,0,0,
+		0.9844,0,0,
+		0.9688,0,0,
+		0.9531,0,0,
+		0.9375,0,0,
+		0.9219,0,0,
+		0.9063,0,0,
+		0.8906,0,0,
+		0.8750,0,0,
+		0.8594,0,0,
+		0.8438,0,0,
+		0.8281,0,0,
+		0.8125,0,0,
+		0.7969,0,0,
+		0.7813,0,0,
+		0.7656,0,0,
+		0.7500,0,0,
+		0.7344,0,0,
+		0.7188,0,0,
+		0.7031,0,0,
+		0.6875,0,0,
+		0.6719,0,0,
+		0.6563,0,0,
+		0.6406,0,0,
+		0.6250,0,0,
+		0.6094,0,0,
+		0.5938,0,0,
+		0.5781,0,0,
+		0.5625,0,0,
+		0.5469,0,0,
+		0.5313,0,0,
+		0.5156,0,0
+	};
+	RGBPixelType rgbPixelTemp;
+	UnChPixelType uhPixelTemp;
+	RGBAImageType::Pointer rgbaImageData=RGBAImageType::New();
+	RGBAImageType::IndexType start;
+	start[0]=0;
+	start[1]=0;
+	RGBAImageType::SizeType size;
+	size=unCharImageData->GetRequestedRegion().GetSize();
+	RGBAImageType::RegionType region;
+	region.SetSize(size);
+	region.SetIndex(start);
+	rgbaImageData->SetRegions(region);
+	rgbaImageData->Allocate();
+	RGBAPixelType rgbaPixelTemp;
+	RGBAIteratortype RGBAIt(rgbaImageData,rgbaImageData->GetRequestedRegion());
+
+	while(!It.IsAtEnd())
+	{
+		uhPixelTemp=It.Get();
+		if(uhPixelTemp>0)
+		{
+			rgbPixelTemp.SetRed((UnChPixelType)(colorMapJetData[uhPixelTemp-1][0] * 255.0));
+			rgbPixelTemp.SetGreen((UnChPixelType)(colorMapJetData[uhPixelTemp-1][1] * 255.0));
+			rgbPixelTemp.SetBlue((UnChPixelType)(colorMapJetData[uhPixelTemp-1][2] * 255.0));
+			rgbaPixelTemp.SetRed((UnChPixelType)(colorMapJetData[uhPixelTemp-1][0] * 255.0));
+			rgbaPixelTemp.SetGreen((UnChPixelType)(colorMapJetData[uhPixelTemp-1][1] * 255.0));
+			rgbaPixelTemp.SetBlue((UnChPixelType)(colorMapJetData[uhPixelTemp-1][2] * 255.0));
+			rgbaPixelTemp.SetAlpha(255);
+		}
+		else
+		{
+			rgbPixelTemp.SetRed((UnChPixelType)(colorMapJetData[0][0] * 255.0));
+			rgbPixelTemp.SetGreen((UnChPixelType)(colorMapJetData[0][1] * 255.0));
+			rgbPixelTemp.SetBlue((UnChPixelType)(colorMapJetData[0][2] * 255.0));
+			rgbaPixelTemp.SetRed((UnChPixelType)(colorMapJetData[0][0] * 255.0));
+			rgbaPixelTemp.SetGreen((UnChPixelType)(colorMapJetData[0][1] * 255.0));
+			rgbaPixelTemp.SetBlue((UnChPixelType)(colorMapJetData[0][2] * 255.0));
+			rgbaPixelTemp.SetAlpha(0);
+		}
+		RGBIt.Set(rgbPixelTemp);
+		RGBAIt.Set(rgbaPixelTemp);
+		++It;
+		++RGBIt;
+		++RGBAIt;
+	}
+	writeRGBImage(rgbImageData,".//tempFiles//pseudocolorData.tif");
+	writeRGBAImage(rgbaImageData,".//tempFiles//pseudocolorData.png");
+	emit done();
+}
+
 
 ImagePseudoColor::ImagePseudoColor(QWidget *parent, Qt::WFlags flags)
 	: QMainWindow(parent, flags)
@@ -58,7 +511,7 @@ ImagePseudoColor::ImagePseudoColor(QWidget *parent, Qt::WFlags flags)
 	QObject::connect(ui.pushButtonSubstract,SIGNAL(clicked()),this,SLOT(on_pushButton_substract_clicked()));
 	QObject::connect(ui.pushButtonFilter,SIGNAL(clicked()),this,SLOT(on_pushButton_filter_clicked()));
 	QObject::connect(ui.pushButtonFusion,SIGNAL(clicked()),this,SLOT(on_pushButton_fusion_clicked()));
-
+	QObject::connect(ui.pushButtonPseudoColor,SIGNAL(clicked()),this,SLOT(on_pushButton_pseudocolor_clicked()));
 
 	initial();
 }
@@ -74,6 +527,7 @@ void ImagePseudoColor::initial()
 	luminescenceFlag=false;
 	substractFlag=false;
 	filterFlag=false;
+	pseudocolorFlag=false;
 	fusionFlag=false;
 
 	photographImage=NULL;
@@ -93,7 +547,19 @@ void ImagePseudoColor::initial()
 	luminescneceFileName="";
 
 
-//	filterThread=new FilterThread();
+	filterThread=new FilterThread;
+	pseudocolorThread=new PseudocolorThread;
+	connect(filterThread,SIGNAL(done()),this,SLOT(receiveFilterSignal()));
+	connect(pseudocolorThread,SIGNAL(done()),this,SLOT(receivePseudocolorSignal()));
+// 	ui.pushButtonLuminescence->setEnabled(true);
+// 	ui.pushButtonPhotograph->setEnabled(true);
+// 	ui.pushButtonSubstract->setEnabled(false);
+// 	ui.pushButtonFilter->setEnabled(false);
+// 	ui.pushButtonFusion->setEnabled(false);
+// 	ui.pushButtonClear->setEnabled(false);
+// 	ui.pushButtonSave->setEnabled(false);
+// 	ui.pushButtonQuit->setEnabled(true);
+
 	QRegExp regx("[0-9]+$");
 	QValidator *validator1 = new QRegExpValidator(regx,ui.SubstractLineEdit);
 	ui.SubstractLineEdit->setValidator(validator1);
@@ -143,6 +609,7 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 			luminescenceFlag=false;
 			substractFlag=false;
 			filterFlag=false;
+			pseudocolorFlag=false;
 			fusionFlag=false;
 			ui.luminescenceLabel->setText("luminescence");
 			delete luminescneceImage;
@@ -156,11 +623,16 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 		{
 			delete luminescneceImage;
 			luminescenceFlag=false;
+			pseudocolorFlag=false;
 			substractFlag=false;
 			filterFlag=false;
 			fusionFlag=false;
 			return;
 		}
+		substractFlag=false;
+		filterFlag=false;
+		pseudocolorFlag=false;
+		fusionFlag=false;
 		luminescneceFileName=path;
 	}	
 }
@@ -174,6 +646,7 @@ void ImagePseudoColor::on_pushButton_substract_clicked()
 		QMessageBox::information(NULL,"Warning","You didn't select a luminescence image.");
 		substractFlag=false;
 		filterFlag=false;
+		pseudocolorFlag=false;
 		fusionFlag=false;
 		return;
 	}
@@ -182,6 +655,7 @@ void ImagePseudoColor::on_pushButton_substract_clicked()
 		QMessageBox::information(NULL,"Warning","The input must be smaller than 65535.");
 		substractFlag=false;
 		filterFlag=false;
+		pseudocolorFlag=false;
 		fusionFlag=false;
 		return;
 	}
@@ -193,6 +667,9 @@ void ImagePseudoColor::on_pushButton_substract_clicked()
 	imwrite(".//tempFiles//substractData.tif",outputImageData);
 	showLuminescenceData(".//tempFiles//substractData.tif");
 	substractFlag=true;
+	filterFlag=false;
+	pseudocolorFlag=false;
+	fusionFlag=false;
 }
 
 void ImagePseudoColor::on_pushButton_filter_clicked()
@@ -206,69 +683,40 @@ void ImagePseudoColor::on_pushButton_filter_clicked()
 		fusionFlag=false;
 		return;
 	}
-	if(temp<1 || temp>110)
+	if(temp<1 || temp>100)//暂定
 	{
-		QMessageBox::information(NULL,"Warning","The input must be larger than 0 and smaller than 20.");
+		QMessageBox::information(NULL,"Warning","The input must be larger than 0 and smaller than 100.");
 		filterFlag=false;
 		fusionFlag=false;
 		return;
 	}
+	ui.pushButtonFilter->setEnabled(false);
 	filterValue=temp;
-	filterThread.kernelSize=filterValue;
-	filterThread.start();
-// 	Mat inputImageData=imread(".//tempFiles//substractData.tif",CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
-// 	Mat outputImageData=inputImageData.clone();
-// 	//以下是自定义的中值滤波代码
-// 	PixelType midElement;
-// 	vector<PixelType> pixelVector(0);
-// 	for(int i=filterValue;i<inputImageData.rows-filterValue;++i)
-// 	{
-// 		for(int j=filterValue;j<inputImageData.cols-filterValue;++j)
-// 		{
-// 			pixelVector.clear();
-// 			for(int ii=i-filterValue;ii<i+filterValue+1;++ii)
-// 			{
-// 				for(int jj=j-filterValue;jj<j+filterValue+1;++jj)
-// 				{
-// 					pixelVector.push_back(inputImageData.at<PixelType>(ii,jj));
-// 				}
-// 			}
-// 			sort(pixelVector.begin(),pixelVector.end());
-// 			outputImageData.at<PixelType>(i,j)=pixelVector.at(pixelVector.size()/2);
-// 		}
-// 	}
-// 	//over
-// 	imwrite(".//tempFiles//filterData.tif",outputImageData);
- 	showLuminescenceData(".//tempFiles//filterData.tif");
-
-
-// 	int i=inputImageData.rows;
-// 	int j=inputImageData.cols;
-// 	PixelType iiii=inputImageData.at<PixelType>(1024,1024);
-
-//	medianBlur(inputImageData,outputImageData,filterValue);
-// 	//cvSmooth(inputImageData,outputImageData,);
-// // 	IplImage* inputImageData=cvLoadImage(".//tempFiles//filterData.tif",-1);
-// // 	IplImage* outputImageData=cvCreateImage(cvSize(inputImageData->width,inputImageData->height),inputImageData->depth,1);
-// // 	cvSmooth(inputImageData,outputImageData,CV_MEDIAN,filterValue,filterValue,0,0);
-// // 	cvSaveImage(".//tempFiles//filterData.tif",outputImageData);
-// 	imwrite(".//tempFiles//filterData.tif",outputImageData);
-// 	showLuminescenceData(".//tempFiles//filterData.tif");
-
-//以下是利用ITK来进行中值滤波的代码
-// 	filterFlag=true;
-// 	tempITKLuminesenceData=NULL;
-// 	tempITKLuminesenceData=ImageType::New();
-// 	tempITKLuminesenceData=readImage(".//tempFiles//substractData.tif");
-// 	ImageType::SizeType filterRadius;
-// 	filterRadius[0]=filterRadius[1]=filterValue;
-// 	filter->SetInput(tempITKLuminesenceData);
-// 	filter->SetRadius(filterRadius);
-// 	filter->Update();
-// 	writeImage(filter->GetOutput(),".//tempFiles//filteredData.tif");
-// 	showLuminescenceData(".//tempFiles//filteredData.tif");
+	filterThread->kernelSize=filterValue;
+	filterThread->start();
 }
-
+void ImagePseudoColor::on_pushButton_pseudocolor_clicked()
+{
+	colorbarHighValue=ui.spinBoxHighValue->value();
+	colorbarLowValue=ui.spinBoxLowValue->value();
+	if(!filterFlag)
+	{
+		QMessageBox::information(NULL,"Warning","Please filter the luminescnece image.");
+		pseudocolorFlag=false;
+		fusionFlag=false;
+		return;
+	}
+	if(colorbarHighValue<=colorbarLowValue)
+	{
+		QMessageBox::information(NULL,"Warning","The colorbar_low must be smaller than colorbar_high.");
+		pseudocolorFlag=false;
+		fusionFlag=false;
+		return;
+	}
+	ui.pushButtonPseudoColor->setEnabled(false);
+	pseudocolorThread->setColorbarValues(colorbarLowValue,colorbarHighValue);
+	pseudocolorThread->start();
+}
 void ImagePseudoColor::on_pushButton_fusion_clicked()
 {
 	;
@@ -318,4 +766,26 @@ void ImagePseudoColor::writeImage(ImageType* outputImage, const char* filename)
 	writer->SetImageIO(tiffIO);
 	writer->SetInput(outputImage);
 	writer->Update();
+}
+void ImagePseudoColor::receiveFilterSignal()
+{
+	
+	IplImage *Image1=cvLoadImage(".//tempFiles//filterData.tif" ,CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH );
+	double minValue,maxValue;
+	cvMinMaxLoc(Image1,&minValue,&maxValue);
+	ui.spinBoxHighValue->setValue((int)(maxValue));
+	ui.spinBoxLowValue->setValue((int)(minValue));
+
+	showLuminescenceData(".//tempFiles//filterData.tif");
+	filterFlag=true;
+	pseudocolorFlag=false;
+	fusionFlag=false;
+	ui.pushButtonFilter->setEnabled(true);
+}
+void ImagePseudoColor::receivePseudocolorSignal()
+{
+	showLuminescenceData(".//tempFiles//pseudocolorData.tif");
+	pseudocolorFlag=true;
+	fusionFlag=false;
+	ui.pushButtonPseudoColor->setEnabled(true);
 }

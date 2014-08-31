@@ -11,6 +11,7 @@
 #include "itkImageFileWriter.h"
 #include "itkImageRegionIterator.h"
 #include "itkTIFFImageIO.h"
+#include "itkPNGImageIO.h"
 #include "itkMedianImageFilter.h"
 #include "itkRescaleIntensityImageFilter.h"
 #include "itkCastImageFilter.h"
@@ -24,29 +25,69 @@ typedef itk::ImageFileWriter<ImageType> WriterType;//ÕâÀï£¬ÊäÈëÒÔ¼°Êä³öµÄÓ«¹âÍ¼Ï
 
 typedef unsigned char UnChPixelType;//ÊäÈëµÄ°×¹âÍ¼Ïñ£¬Îª8bit
 typedef itk::Image<UnChPixelType,Dimension> UnChImageType;//°×¹âÍ¼ÏñµÄITK¶¨Òå
-
+typedef itk::RescaleIntensityImageFilter<ImageType,ImageType> RescaleFilterType;
+typedef itk::CastImageFilter<ImageType,UnChImageType> CastFilterType;
 typedef itk::RGBPixel< unsigned char >        RGBPixelType;
 typedef itk::Image< RGBPixelType, Dimension > RGBImageType;//Î±²ÊÉ«Í¼ÏñµÄITK¶¨Òå
+typedef itk::ImageFileWriter<RGBImageType> RGBWriterType;//Êä³ö8bit rgbÍ¼Ïñ
+typedef itk::ImageFileWriter<UnChImageType> UnChWriterType;//Êä³ö8bitÍ¼Ïñ
+typedef itk::ImageFileReader<UnChImageType> UnChReaderType;
+typedef itk::ImageRegionIterator<RGBImageType> RGBIteratortype;
+typedef itk::ImageRegionIterator<UnChImageType> UnChIteratorType;
+typedef itk::ScalarToRGBColormapImageFilter< UnChImageType, RGBImageType> RGBFilterType;
+typedef itk::RGBAPixel<unsigned char> RGBAPixelType;//ÓÃÓÚÉú³ÉpngÍ¼Æ¬µÄÏñËØ¸ñÊ½
+typedef itk::Image< RGBAPixelType, Dimension > RGBAImageType;
+typedef itk::ImageRegionIterator<RGBAImageType> RGBAIteratortype;
+typedef itk::ImageFileWriter<RGBAImageType> RGBAWriterType;
 
 typedef itk::ImageRegionConstIterator<ImageType> ConstIteratorType;
 typedef itk::ImageRegionIterator<ImageType> IteratorType;//Í¼Ïñµü´úÆ÷
 typedef itk::TIFFImageIO TIFFIOType;//IOÏŞ¶¨Îªtiff¸ñÊ½Í¼Ïñ
+typedef itk::PNGImageIO PNGIOType;
 typedef itk::MedianImageFilter<ImageType,ImageType> MedianFilterType;//Í¼ÏñÂË²¨Æ÷
 
-class FilterThread:public QThread
+class FilterThread:public QThread//Ó«¹âÍ¼ÏñÂË²¨Ïß³Ì
 {
+	Q_OBJECT
 public:
 	int kernelSize;
 	void run();
-	ImageType::Pointer readImage(QString filename);//read a image file using ITK£¬ÔİÊ±Ã»ÓÃµÄ
-	void writeImage(ImageType* outputImage, const char* filename);//write a image to disk using ITK£¬ÔİÊ±Ã»ÓÃµ½
+	ImageType::Pointer readImage(QString filename);//read a image file using ITK
+	void writeImage(ImageType* outputImage, const char* filename);//write a image to disk using ITK
 	
+signals:
+	void done();
 private:
 	ImageType::Pointer tempITKLuminesenceData;//ÁÙÊ±ÓÃÀ´´¦ÀíÓ«¹âÍ¼ÏñµÄÍ¼ÏñÊı¾İ£¬»ùÓÚITK
 	TIFFIOType::Pointer tiffIO;//ITK¶ÁÈ¡ÒÔ¼°´æ´¢Êı¾İµÄ¸ñÊ½ÏŞ¶¨
 	MedianFilterType::Pointer filter;
 };
+class PseudocolorThread:public QThread//Ó«¹âÍ¼ÏñÎ±²ÊÉ«´¦ÀíÏß³Ì,Ê¹ÓÃITK
+{
+	Q_OBJECT
+private:
+	PixelType colorbarHighValue;
+	PixelType colorbarLowValue;
+	ImageType::Pointer readImage(QString filename);
+	void writeRGBImage(RGBImageType* outputImage,const char* filename);
+	void sliceInputLuminescneceImage(ImageType::Pointer inputImage,PixelType HValue,PixelType LValue);//sliceInputLuminescneceImage()   º¯Êı¹¦ÄÜ£º½«ÊäÈëµÄ16Î»Ó«¹âÍ¼£¬°´ÕÕÉÏÏÂcolorbarÓ³Éäµ½0-255,È»ºó´æÔÚ´ÅÅÌÉÏ£¬ÃüÃûluminescnece8BitImage.tif
+	void copyImageData(ImageType::Pointer inputData,ImageType::Pointer outputData);
+	UnChImageType::Pointer rescaleImage(ImageType::Pointer imageData,PixelType minValue,PixelType maxValue);//rescale the image to the value between assigned values
+	void write8BitImage(UnChImageType* outputImage, const char* filename);
+	void writeRGBAImage(RGBAImageType* outputImage,const char* filename);
+	ImageType::Pointer inputImageData;
+	TIFFIOType::Pointer tiffIO;
+public:
+	void setColorbarValues(PixelType low,PixelType high)
+	{
+		colorbarLowValue=low;
+		colorbarHighValue=high;
+	}
+	void run();
 
+signals:
+	void done();
+};
 
 class ImagePseudoColor : public QMainWindow
 {
@@ -58,24 +99,29 @@ public:
 
 private:
 	Ui::ImagePseudoColorClass ui;
-	FilterThread filterThread;
+	FilterThread *filterThread;
+	PseudocolorThread *pseudocolorThread;
 
 private slots:
 	void on_pushButton_photograph_clicked();
 	void on_pushButton_luminescence_clicked();
 	void on_pushButton_substract_clicked();
 	void on_pushButton_filter_clicked();
+	void on_pushButton_pseudocolor_clicked();
 	void on_pushButton_fusion_clicked();
 // 	void on_pushButton_save_clicked();
 // 	void on_pushButton_clear_clicked();
 // 	void on_pushButton_quit_clicked();
 // 	void on_spinBoxValueChanged();
+	void receiveFilterSignal();
+	void receivePseudocolorSignal();
 
 private:
 	bool photographFlag;
 	bool luminescenceFlag;
 	bool substractFlag;
 	bool filterFlag;
+	bool pseudocolorFlag;
 	bool fusionFlag; 
 	PixelType substractValue;
 	PixelType filterValue;
