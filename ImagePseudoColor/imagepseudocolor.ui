@@ -25,6 +25,10 @@
   <property name="windowTitle">
    <string>ImagePseudoColor</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>ImagePseudoColor.ico</normaloff>ImagePseudoColor.ico</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QLineEdit" name="PhotographLineEdit">
     <property name="geometry">

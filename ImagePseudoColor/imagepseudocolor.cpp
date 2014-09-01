@@ -522,6 +522,7 @@ ImagePseudoColor::ImagePseudoColor(QWidget *parent, Qt::WFlags flags)
 	QObject::connect(ui.pushButtonSave,SIGNAL(clicked()),this,SLOT(on_pushButton_save_clicked()));
 	QObject::connect(ui.pushButtonClear,SIGNAL(clicked()),this,SLOT(on_pushButton_clear_clicked()));
 	QObject::connect(ui.pushButtonQuit,SIGNAL(clicked()),this,SLOT(on_pushButton_quit_clicked()));
+	QObject::connect(ui.actionAbout,SIGNAL(triggered()),this,SLOT(on_menuHelp_clicked()));
 	initial();
 }
 
@@ -841,6 +842,10 @@ void ImagePseudoColor::clearFusionWindow()
 	ui.colorbarLowLabel->setText("");
 	ui.fusionImageLabel->setText("Fusion");
 }
+void ImagePseudoColor::on_menuHelp_clicked()
+{
+	QMessageBox::information(this, tr("About"),QString("Author: Xin Cao\n")+"Email: caoxin918@gmail.com");  
+}
 bool ImagePseudoColor::copyDirectoryFiles(QString fromDir,QString toDir,bool cover)
 {
 	QDir sourceDir(fromDir);
@@ -897,8 +902,8 @@ void ImagePseudoColor::on_pushButton_clear_clicked()
 	fusionFlag=false;
 	ui.LuminescenceLineEdit->setText("");
 	ui.PhotographLineEdit->setText("");
-	ui.SubstractLineEdit->setText("0");
-	ui.FilterLineEdit->setText("1");
+	ui.SubstractLineEdit->setText("");
+	ui.FilterLineEdit->setText("");
 	ui.spinBoxHighValue->setValue(1);
 	ui.spinBoxLowValue->setValue(0);
 	ui.photographLabel->setText("Photograph");

@@ -63,6 +63,9 @@ public:
         ImagePseudoColorClass->resize(950, 588);
         ImagePseudoColorClass->setMinimumSize(QSize(950, 588));
         ImagePseudoColorClass->setMaximumSize(QSize(950, 588));
+        QIcon icon;
+        icon.addFile(QString::fromUtf8("ImagePseudoColor.ico"), QSize(), QIcon::Normal, QIcon::Off);
+        ImagePseudoColorClass->setWindowIcon(icon);
         actionAbout = new QAction(ImagePseudoColorClass);
         actionAbout->setObjectName(QString::fromUtf8("actionAbout"));
         centralWidget = new QWidget(ImagePseudoColorClass);

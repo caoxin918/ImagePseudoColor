@@ -123,6 +123,7 @@ private slots:
  	void on_pushButton_quit_clicked();
 	void receiveFilterSignal();
 	void receivePseudocolorSignal();
+	void on_menuHelp_clicked();
 
 private:
 	bool photographFlag;
