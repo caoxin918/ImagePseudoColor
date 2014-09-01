@@ -593,6 +593,8 @@ void ImagePseudoColor::initial()
 		imgScaled=new QImage;
 		*imgScaled=colorbarImage->scaled(ui.colorbarImageLabel->width(),ui.colorbarImageLabel->height());
 		ui.colorbarImageLabel->setPixmap(QPixmap::fromImage(*imgScaled));
+		ui.clorbarHighLabel->setText("");
+		ui.colorbarLowLabel->setText("");
 	}
 
 }
@@ -644,6 +646,7 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 		QMessageBox::information(NULL,"Warning","Initial failed.");
 		return;
 	}
+	clearFusionWindow();
 	QString path=QFileDialog::getOpenFileName(this,"Open luminescence",".","tiff Files(*.tif)");
 	if (path.length()==0)
 	{
@@ -726,6 +729,7 @@ void ImagePseudoColor::on_pushButton_substract_clicked()
 
 void ImagePseudoColor::on_pushButton_filter_clicked()
 {
+	clearFusionWindow();
 	unsigned long temp;
 	temp=ui.FilterLineEdit->text().toULong();
 	if(!substractFlag)
@@ -749,6 +753,7 @@ void ImagePseudoColor::on_pushButton_filter_clicked()
 }
 void ImagePseudoColor::on_pushButton_pseudocolor_clicked()
 {
+	clearFusionWindow();
 	colorbarHighValue=ui.spinBoxHighValue->value();
 	colorbarLowValue=ui.spinBoxLowValue->value();
 	if(!filterFlag)
@@ -830,6 +835,12 @@ void ImagePseudoColor::on_pushButton_quit_clicked()
 {
 	this->close();
 }
+void ImagePseudoColor::clearFusionWindow()
+{
+	ui.clorbarHighLabel->setText("");
+	ui.colorbarLowLabel->setText("");
+	ui.fusionImageLabel->setText("Fusion");
+}
 bool ImagePseudoColor::copyDirectoryFiles(QString fromDir,QString toDir,bool cover)
 {
 	QDir sourceDir(fromDir);
@@ -856,6 +867,12 @@ bool ImagePseudoColor::copyDirectoryFiles(QString fromDir,QString toDir,bool cov
 }
 void ImagePseudoColor::on_pushButton_save_clicked()
 {
+	if(!fusionFlag)
+	{
+		QMessageBox::information(NULL,"Warning","No fusion images.");
+		fusionFlag=false;
+		return;
+	}
 	QString fileName=QFileDialog::getSaveFileName(this,tr("Save Results"),"");
 	if(!fileName.isNull())
 	{

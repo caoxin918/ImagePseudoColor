@@ -61,7 +61,7 @@ public:
         if (ImagePseudoColorClass->objectName().isEmpty())
             ImagePseudoColorClass->setObjectName(QString::fromUtf8("ImagePseudoColorClass"));
         ImagePseudoColorClass->resize(950, 588);
-        ImagePseudoColorClass->setMinimumSize(QSize(934, 588));
+        ImagePseudoColorClass->setMinimumSize(QSize(950, 588));
         ImagePseudoColorClass->setMaximumSize(QSize(950, 588));
         actionAbout = new QAction(ImagePseudoColorClass);
         actionAbout->setObjectName(QString::fromUtf8("actionAbout"));

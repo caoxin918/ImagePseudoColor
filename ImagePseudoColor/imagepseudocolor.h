@@ -168,6 +168,7 @@ private:
 	bool showLuminescenceData(QString fileName);
 	bool showPhotographData(QString fileName);
 	void showFusionData(QString filename);
+	void clearFusionWindow();
 
 	bool copyDirectoryFiles(QString fromDir,QString toDir,bool cover);
 	bool removeDirWithContent(const QString &dirName);
