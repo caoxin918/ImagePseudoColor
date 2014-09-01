@@ -30,6 +30,7 @@ typedef itk::CastImageFilter<ImageType,UnChImageType> CastFilterType;
 typedef itk::RGBPixel< unsigned char >        RGBPixelType;
 typedef itk::Image< RGBPixelType, Dimension > RGBImageType;//伪彩色图像的ITK定义
 typedef itk::ImageFileWriter<RGBImageType> RGBWriterType;//输出8bit rgb图像
+typedef itk::ImageFileReader<RGBImageType> RGBReaderType;
 typedef itk::ImageFileWriter<UnChImageType> UnChWriterType;//输出8bit图像
 typedef itk::ImageFileReader<UnChImageType> UnChReaderType;
 typedef itk::ImageRegionIterator<RGBImageType> RGBIteratortype;
@@ -68,6 +69,8 @@ class PseudocolorThread:public QThread//荧光图像伪彩色处理线程,使用ITK
 private:
 	PixelType colorbarHighValue;
 	PixelType colorbarLowValue;
+	PixelType maxImageValue;
+	PixelType minImageValue;
 	ImageType::Pointer readImage(QString filename);
 	void writeRGBImage(RGBImageType* outputImage,const char* filename);
 	void sliceInputLuminescneceImage(ImageType::Pointer inputImage,PixelType HValue,PixelType LValue);//sliceInputLuminescneceImage()   函数功能：将输入的16位荧光图，按照上下colorbar映射到0-255,然后存在磁盘上，命名luminescnece8BitImage.tif
@@ -75,6 +78,7 @@ private:
 	UnChImageType::Pointer rescaleImage(ImageType::Pointer imageData,PixelType minValue,PixelType maxValue);//rescale the image to the value between assigned values
 	void write8BitImage(UnChImageType* outputImage, const char* filename);
 	void writeRGBAImage(RGBAImageType* outputImage,const char* filename);
+
 	ImageType::Pointer inputImageData;
 	TIFFIOType::Pointer tiffIO;
 public:
@@ -83,6 +87,11 @@ public:
 		colorbarLowValue=low;
 		colorbarHighValue=high;
 	}
+// 	void setMaxMinImageValues(PixelType low,PixelType high)
+// 	{
+// 		maxImageValue=high;
+// 		minImageValue=low;
+// 	}
 	void run();
 
 signals:
@@ -109,10 +118,9 @@ private slots:
 	void on_pushButton_filter_clicked();
 	void on_pushButton_pseudocolor_clicked();
 	void on_pushButton_fusion_clicked();
-// 	void on_pushButton_save_clicked();
-// 	void on_pushButton_clear_clicked();
-// 	void on_pushButton_quit_clicked();
-// 	void on_spinBoxValueChanged();
+ 	void on_pushButton_save_clicked();
+ 	void on_pushButton_clear_clicked();
+ 	void on_pushButton_quit_clicked();
 	void receiveFilterSignal();
 	void receivePseudocolorSignal();
 
@@ -123,6 +131,7 @@ private:
 	bool filterFlag;
 	bool pseudocolorFlag;
 	bool fusionFlag; 
+	bool initialFlag;
 	PixelType substractValue;
 	PixelType filterValue;
 	PixelType highValueInLuminescenceImage;
@@ -141,6 +150,7 @@ private:
 	QImage* filteredImage;
 	QImage* fusionImage;
 	QImage *imgScaled;
+	QImage* colorbarImage;
 
 private: 
 	QString photographFileName;
@@ -148,12 +158,19 @@ private:
 
 private:
 	void initial();
-	ImageType::Pointer readImage(QString filename);//read a image file using ITK，暂时没用的
-	void writeImage(ImageType* outputImage, const char* filename);//write a image to disk using ITK，暂时没用到
+	ImageType::Pointer readImage(QString filename);//read a image file using ITK
+	void writeImage(ImageType* outputImage, const char* filename);//write a image to disk using ITK
+	RGBImageType::Pointer readRGBImage(QString filename);
+	void writeRGBImage(RGBImageType* outputImage,const char* filename);
+
+
 	PixelType minusPixel(PixelType pixelValue,PixelType subValue){return pixelValue>subValue ? (pixelValue-subValue):0;}//没用到
 	bool showLuminescenceData(QString fileName);
 	bool showPhotographData(QString fileName);
+	void showFusionData(QString filename);
 
+	bool copyDirectoryFiles(QString fromDir,QString toDir,bool cover);
+	bool removeDirWithContent(const QString &dirName);
 };
 
 

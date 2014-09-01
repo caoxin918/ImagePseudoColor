@@ -1,11 +1,13 @@
 #include "imagepseudocolor.h"
 #include "QFileDialog"
 #include "QMessageBox"
+#include "qfile.h"
 #include "qpixmap.h"
 #include <direct.h>
 #include <stdio.h>
 #include <io.h>
 #include <iostream>
+
 
 #include <vector>
 #include <algorithm>
@@ -37,17 +39,24 @@ void FilterThread::writeImage(ImageType* outputImage, const char* filename)
 void FilterThread::run()
 {	
 	//以下是利用ITK来进行中值滤波的代码
-	tempITKLuminesenceData=ImageType::New();
-	tiffIO=TIFFIOType::New();
-	tempITKLuminesenceData=readImage(".//tempFiles//substractData.tif");
-	ImageType::SizeType filterRadius;
-	filterRadius[0]=filterRadius[1]=kernelSize;
-	filter=MedianFilterType::New();
-	filter->SetInput(tempITKLuminesenceData);
-	filter->SetRadius(filterRadius);
-	filter->Update();
-	writeImage(filter->GetOutput(),".//tempFiles//filterData.tif");
-	
+	if(kernelSize==0)
+	{
+		Mat tempLuminesenceData=imread(".//tempFiles//substractData.tif",CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+		imwrite(".//tempFiles//filterData.tif",tempLuminesenceData);
+	}
+	else
+	{
+		tempITKLuminesenceData=ImageType::New();
+		tiffIO=TIFFIOType::New();
+		tempITKLuminesenceData=readImage(".//tempFiles//substractData.tif");
+		ImageType::SizeType filterRadius;
+		filterRadius[0]=filterRadius[1]=kernelSize;
+		filter=MedianFilterType::New();
+		filter->SetInput(tempITKLuminesenceData);
+		filter->SetRadius(filterRadius);
+		filter->Update();
+		writeImage(filter->GetOutput(),".//tempFiles//filterData.tif");
+	}
 	emit done();
 }
 
@@ -113,24 +122,24 @@ void PseudocolorThread::sliceInputLuminescneceImage(ImageType::Pointer inputImag
 	tempImage->CopyInformation(inputImage);
 	copyImageData(inputImage,tempImage);
 	IteratorType tempIt(tempImage,tempImage->GetRequestedRegion());
-// 	PixelType minImageValue,maxImageValue;
-// 	minImageValue=65535;
-// 	maxImageValue=0;
+	PixelType minImageValue,maxImageValue;
+	minImageValue=65535;
+	maxImageValue=0;
 	while(!tempIt.IsAtEnd())
 	{
 		if(tempIt.Get()>=HValue)
 			tempIt.Set(HValue);
 		if(tempIt.Get()<=LValue)
 			tempIt.Set(LValue);
-// 		if(tempIt.Get()>maxImageValue)
-// 			maxImageValue=tempIt.Get();
-// 		if(tempIt.Get()<minImageValue)
-// 			minImageValue=tempIt.Get();
+		if(tempIt.Get()>maxImageValue)
+			maxImageValue=tempIt.Get();
+		if(tempIt.Get()<minImageValue)
+			minImageValue=tempIt.Get();
 		++tempIt;
 	}
 	int sliceMin,sliceMax;
-	sliceMax=(int)(((float)colorbarHighValue-LValue)/((float)HValue-LValue)*255);
-	sliceMin=(int)(((float)colorbarLowValue-LValue)/((float)HValue-LValue)*255);
+	sliceMax=(int)(((float)maxImageValue-LValue)/((float)HValue-LValue)*255);
+	sliceMin=(int)(((float)minImageValue-LValue)/((float)HValue-LValue)*255);
 	if(sliceMin==0)
 		sliceMin=1;//方便进行接下来的矫正，为了避免并不小于lvalue的像素点被划分为0层的情况
 	if(sliceMax<2)
@@ -172,8 +181,6 @@ void PseudocolorThread::writeRGBAImage(RGBAImageType* outputImage,const char* fi
 }
 void PseudocolorThread::run()
 {
-	PixelType maxValue;
-	PixelType minValue;
 	inputImageData=ImageType::New();
 	tiffIO=TIFFIOType::New();
 	inputImageData=readImage(".//tempFiles//filterData.tif");
@@ -512,15 +519,19 @@ ImagePseudoColor::ImagePseudoColor(QWidget *parent, Qt::WFlags flags)
 	QObject::connect(ui.pushButtonFilter,SIGNAL(clicked()),this,SLOT(on_pushButton_filter_clicked()));
 	QObject::connect(ui.pushButtonFusion,SIGNAL(clicked()),this,SLOT(on_pushButton_fusion_clicked()));
 	QObject::connect(ui.pushButtonPseudoColor,SIGNAL(clicked()),this,SLOT(on_pushButton_pseudocolor_clicked()));
-
+	QObject::connect(ui.pushButtonSave,SIGNAL(clicked()),this,SLOT(on_pushButton_save_clicked()));
+	QObject::connect(ui.pushButtonClear,SIGNAL(clicked()),this,SLOT(on_pushButton_clear_clicked()));
+	QObject::connect(ui.pushButtonQuit,SIGNAL(clicked()),this,SLOT(on_pushButton_quit_clicked()));
 	initial();
 }
 
 ImagePseudoColor::~ImagePseudoColor()
 {
-
+	if(!removeDirWithContent(".//tempFiles"))
+	{
+		QMessageBox::information(NULL,"Warning","Delete tempfiles failed.");
+	}
 }
-
 void ImagePseudoColor::initial()
 {
 	photographFlag=false;
@@ -529,6 +540,7 @@ void ImagePseudoColor::initial()
 	filterFlag=false;
 	pseudocolorFlag=false;
 	fusionFlag=false;
+	initialFlag=false;
 
 	photographImage=NULL;
 	luminescneceImage=NULL;
@@ -551,28 +563,47 @@ void ImagePseudoColor::initial()
 	pseudocolorThread=new PseudocolorThread;
 	connect(filterThread,SIGNAL(done()),this,SLOT(receiveFilterSignal()));
 	connect(pseudocolorThread,SIGNAL(done()),this,SLOT(receivePseudocolorSignal()));
-// 	ui.pushButtonLuminescence->setEnabled(true);
-// 	ui.pushButtonPhotograph->setEnabled(true);
-// 	ui.pushButtonSubstract->setEnabled(false);
-// 	ui.pushButtonFilter->setEnabled(false);
-// 	ui.pushButtonFusion->setEnabled(false);
-// 	ui.pushButtonClear->setEnabled(false);
-// 	ui.pushButtonSave->setEnabled(false);
-// 	ui.pushButtonQuit->setEnabled(true);
 
 	QRegExp regx("[0-9]+$");
 	QValidator *validator1 = new QRegExpValidator(regx,ui.SubstractLineEdit);
 	ui.SubstractLineEdit->setValidator(validator1);
 	QValidator *validator2 = new QRegExpValidator(regx,ui.FilterLineEdit);
 	ui.FilterLineEdit->setValidator(validator2);
-	if(_access(".//tempFiles",0)==-1)
+	QDir targetDir(".//tempFiles");//创建临时文件夹
+	if(!targetDir.exists())
 	{
-		_mkdir(".//tempFiles");
+		initialFlag=false;
+		if(!targetDir.mkdir(targetDir.absolutePath()))
+		{
+			QMessageBox::information(NULL,"Warning","Cannot create the temp file.");
+			initialFlag=false;
+		}
+		else
+		{
+			initialFlag=true;
+		}
 	}
+	else
+	{
+		initialFlag=true;
+	}
+	{
+		colorbarImage=new QImage;
+		colorbarImage->load("JetColormapFunction.png");
+		imgScaled=new QImage;
+		*imgScaled=colorbarImage->scaled(ui.colorbarImageLabel->width(),ui.colorbarImageLabel->height());
+		ui.colorbarImageLabel->setPixmap(QPixmap::fromImage(*imgScaled));
+	}
+
 }
 
 void ImagePseudoColor::on_pushButton_photograph_clicked()
 {
+	if(!initialFlag)
+	{
+		QMessageBox::information(NULL,"Warning","Initial failed.");
+		return;
+	}
 	QString path=QFileDialog::getOpenFileName(this,"Open photograph",".","tiff Files(*.tif)");
 	if (path.length()==0)
 	{
@@ -587,6 +618,13 @@ void ImagePseudoColor::on_pushButton_photograph_clicked()
 	}
 	else
 	{
+		Mat tempData=imread(string((const char *)path.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+		if(tempData.channels()!=1)
+		{
+			photographFlag=false;
+			QMessageBox::information(NULL,"Warning","The channel of input image must be 1.");
+			return;
+		}
 		photographFlag=true;
 		if(!showPhotographData(path))
 		{
@@ -595,11 +633,17 @@ void ImagePseudoColor::on_pushButton_photograph_clicked()
 			return;
 		}
 		photographFileName=path;//将白光图像的完整路径复制给photographFileName变量
+		ui.PhotographLineEdit->setText(path);
 	}	
 }
 
 void ImagePseudoColor::on_pushButton_luminescence_clicked()
 {
+	if(!initialFlag)
+	{
+		QMessageBox::information(NULL,"Warning","Initial failed.");
+		return;
+	}
 	QString path=QFileDialog::getOpenFileName(this,"Open luminescence",".","tiff Files(*.tif)");
 	if (path.length()==0)
 	{
@@ -618,6 +662,13 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 	}
 	else
 	{
+		Mat tempData=imread(string((const char *)path.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+		if(tempData.channels()!=1)
+		{
+			photographFlag=false;
+			QMessageBox::information(NULL,"Warning","The channel of input image must be 1.");
+			return;
+		}
 		luminescenceFlag=true;
 		if(!showLuminescenceData(path))
 		{
@@ -634,6 +685,7 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 		pseudocolorFlag=false;
 		fusionFlag=false;
 		luminescneceFileName=path;
+		ui.LuminescenceLineEdit->setText(path);
 	}	
 }
 
@@ -683,7 +735,7 @@ void ImagePseudoColor::on_pushButton_filter_clicked()
 		fusionFlag=false;
 		return;
 	}
-	if(temp<1 || temp>100)//暂定
+	if(temp<0 || temp>100)//暂定
 	{
 		QMessageBox::information(NULL,"Warning","The input must be larger than 0 and smaller than 100.");
 		filterFlag=false;
@@ -719,7 +771,175 @@ void ImagePseudoColor::on_pushButton_pseudocolor_clicked()
 }
 void ImagePseudoColor::on_pushButton_fusion_clicked()
 {
-	;
+	if(!pseudocolorFlag)
+	{
+		QMessageBox::information(NULL,"Warning","Please pseudocolor the luminescnece image.");
+		fusionFlag=false;
+		return;
+	};
+	if(!photographFlag)
+	{
+		photographFileName=luminescneceFileName;//若是没有读取白光图像
+	}
+	tempITKLuminesenceData=ImageType::New();
+	tempITKLuminesenceData=readImage(".//tempFiles//filterData.tif");
+	Mat photo=imread(string((const char *)photographFileName.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_GRAYSCALE);//这里刻意用8bit格式来读取，然后保存成8bit
+	Mat lumi=imread(string((const char *)luminescneceFileName.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+	if(photo.size!=lumi.size)
+	{
+		QMessageBox::information(NULL,"Warning","The sizes of photograph and luminescence are not the same.");
+		fusionFlag=false;
+		return;
+	}
+	imwrite(".//tempFiles//origianlPhotograph.tif",photo);
+	imwrite(".//tempFiles//originalLuminescence.tif",lumi);
+	ImageType::Pointer photographData=ImageType::New();
+	photographData=readImage(".//tempFiles//origianlPhotograph.tif");
+
+	RGBImageType::Pointer pseudocolorData=RGBImageType::New();
+	pseudocolorData=readRGBImage(".//tempFiles//pseudocolorData.tif");
+	IteratorType photographIt(photographData,photographData->GetRequestedRegion());
+	IteratorType luminescenceIt(tempITKLuminesenceData,tempITKLuminesenceData->GetRequestedRegion());
+	RGBIteratortype rgbIt(pseudocolorData,pseudocolorData->GetRequestedRegion());
+	PixelType tempLumi;
+	PixelType tempPhot;
+	RGBPixelType tempRGB;
+	while(!rgbIt.IsAtEnd())
+	{
+		tempLumi=luminescenceIt.Get();
+		tempPhot=photographIt.Get();
+		if(tempLumi<colorbarLowValue)
+		{
+			tempRGB.SetRed(tempPhot);
+			tempRGB.SetBlue(tempPhot);
+			tempRGB.SetGreen(tempPhot);
+			rgbIt.Set(tempRGB);
+		}
+		++rgbIt;
+		++photographIt;
+		++luminescenceIt;
+	}
+	writeRGBImage(pseudocolorData,".//tempFiles//fusionData.tif");
+	showFusionData(".//tempFiles//fusionData.tif");
+	fusionFlag=true;
+	ui.clorbarHighLabel->setText(ui.spinBoxHighValue->text());
+	ui.colorbarLowLabel->setText(ui.spinBoxLowValue->text());
+
+}
+void ImagePseudoColor::on_pushButton_quit_clicked()
+{
+	this->close();
+}
+bool ImagePseudoColor::copyDirectoryFiles(QString fromDir,QString toDir,bool cover)
+{
+	QDir sourceDir(fromDir);
+	QDir targetDir(toDir);
+	if(!targetDir.exists())
+	{
+		if(!targetDir.mkdir(targetDir.absolutePath()))
+			return false;
+	}
+	QFileInfoList fileInfoList = sourceDir.entryInfoList(); 
+	foreach(QFileInfo fileInfo,fileInfoList)
+	{
+		if(fileInfo.fileName()=="."||fileInfo.fileName()=="..")
+			continue;
+		if(cover&&targetDir.exists(fileInfo.fileName()))
+		{
+			targetDir.remove(fileInfo.fileName());
+		}
+		if(!QFile::copy(fileInfo.filePath(),targetDir.filePath(fileInfo.fileName())))
+		{
+			return false;
+		}
+	}
+}
+void ImagePseudoColor::on_pushButton_save_clicked()
+{
+	QString fileName=QFileDialog::getSaveFileName(this,tr("Save Results"),"");
+	if(!fileName.isNull())
+	{
+		if(!copyDirectoryFiles(".//tempFiles",fileName,1))
+		{
+			QMessageBox::information(NULL,"Warning","Copy files errors.");
+			return;
+		}
+	}
+	else
+	{
+		return;
+	}
+}
+void ImagePseudoColor::on_pushButton_clear_clicked()
+{
+	photographFlag=false;
+	luminescenceFlag=false;
+	substractFlag=false;
+	filterFlag=false;
+	pseudocolorFlag=false;
+	fusionFlag=false;
+	ui.LuminescenceLineEdit->setText("");
+	ui.PhotographLineEdit->setText("");
+	ui.SubstractLineEdit->setText("0");
+	ui.FilterLineEdit->setText("1");
+	ui.spinBoxHighValue->setValue(1);
+	ui.spinBoxLowValue->setValue(0);
+	ui.photographLabel->setText("Photograph");
+	ui.luminescenceLabel->setText("Luminescence");
+	ui.fusionImageLabel->setText("Fusion");
+	ui.clorbarHighLabel->setText("1");
+	ui.colorbarLowLabel->setText("0");
+	luminescneceFileName="";
+	photographFileName="";
+}
+bool ImagePseudoColor::removeDirWithContent(const QString &dirName)
+{
+	static QVector<QString> dirNames;  
+	static QString funcErrMsg="删除[%1]失败.";  
+	static QString funcInfFndMsg="发现[%1].";  
+	static QString funcInfDelMsg="删除[%1]成功.";  
+	QDir dir;  
+	QFileInfoList filst;  
+	QFileInfoList::iterator curFi;  
+	//初始化
+	dirNames.clear();  
+	if(dir.exists()){  
+		dirNames<<dirName;  
+	}  
+	else{  
+		return true;  
+	}  
+	//遍历各级文件夹，并将这些文件夹中的文件删除  
+	for(int i=0;i<dirNames.size();++i){  
+		dir.setPath(dirNames[i]);  
+		filst=dir.entryInfoList(QDir::Dirs|QDir::Files  
+			|QDir::Readable|QDir::Writable  
+			|QDir::Hidden|QDir::NoDotAndDotDot  
+			,QDir::Name);  
+		if(filst.size()>0){  
+			curFi=filst.begin();  
+			while(curFi!=filst.end()){  
+				//遇到文件夹,则添加至文件夹列表dirs尾部  
+				if(curFi->isDir()){  
+					dirNames.push_back(curFi->filePath());  
+				}else if(curFi->isFile()){  
+					//遇到文件,则删除之  
+					if(!dir.remove(curFi->fileName())){  
+						return false;  
+					}  
+				}  
+				curFi++;  
+			}//end of while  
+		}  
+	}  
+	//删除文件夹  
+	for(int i=dirNames.size()-1;i>=0;--i){  
+		dir.setPath(dirNames[i]);  
+		if(!dir.rmdir(".")){  
+			return false;  
+		}  
+	}   
+	return true; 
 }
 
 bool ImagePseudoColor::showPhotographData(QString fileName)
@@ -748,6 +968,18 @@ bool ImagePseudoColor::showLuminescenceData(QString fileName)
 	ui.luminescenceLabel->setPixmap(QPixmap::fromImage(*imgScaled));
 	return true;
 }
+void ImagePseudoColor::showFusionData(QString filename)
+{
+	luminescneceImage=new QImage;
+	if(!luminescneceImage->load(filename))
+	{
+		QMessageBox::information(this,tr("Open image error"),tr("Open image error!"));
+		return;
+	}
+	imgScaled=new QImage;
+	*imgScaled=luminescneceImage->scaled(ui.fusionImageLabel->width(),ui.fusionImageLabel->height(),Qt::KeepAspectRatio);
+	ui.fusionImageLabel->setPixmap(QPixmap::fromImage(*imgScaled));
+}
 ImageType::Pointer ImagePseudoColor::readImage(QString filename)
 {
 	string temp1=filename.toStdString();
@@ -758,10 +990,28 @@ ImageType::Pointer ImagePseudoColor::readImage(QString filename)
 	reader->Update();
 	return reader->GetOutput();
 }
+RGBImageType::Pointer ImagePseudoColor::readRGBImage(QString filename)
+{
+	string temp1=filename.toStdString();
+	const char* temp2=temp1.c_str();
+	RGBReaderType::Pointer reader=RGBReaderType::New();
+	reader->SetFileName(temp2);
+	reader->SetImageIO(TIFFIOType::New());
+	reader->Update();
+	return reader->GetOutput();
+}
 
 void ImagePseudoColor::writeImage(ImageType* outputImage, const char* filename)
 {
 	WriterType::Pointer writer=WriterType::New();
+	writer->SetFileName(filename);
+	writer->SetImageIO(tiffIO);
+	writer->SetInput(outputImage);
+	writer->Update();
+}
+void ImagePseudoColor::writeRGBImage(RGBImageType* outputImage,const char* filename)
+{
+	RGBWriterType::Pointer writer=RGBWriterType::New();
 	writer->SetFileName(filename);
 	writer->SetImageIO(tiffIO);
 	writer->SetInput(outputImage);
@@ -775,6 +1025,7 @@ void ImagePseudoColor::receiveFilterSignal()
 	cvMinMaxLoc(Image1,&minValue,&maxValue);
 	ui.spinBoxHighValue->setValue((int)(maxValue));
 	ui.spinBoxLowValue->setValue((int)(minValue));
+//	pseudocolorThread->setMaxMinImageValues(minValue,maxValue);
 
 	showLuminescenceData(".//tempFiles//filterData.tif");
 	filterFlag=true;

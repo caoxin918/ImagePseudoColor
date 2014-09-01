@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>934</width>
+    <width>950</width>
     <height>588</height>
    </rect>
   </property>
@@ -18,7 +18,7 @@
   </property>
   <property name="maximumSize">
    <size>
-    <width>934</width>
+    <width>950</width>
     <height>588</height>
    </size>
   </property>
@@ -237,7 +237,7 @@
     <property name="geometry">
      <rect>
       <x>110</x>
-      <y>20</y>
+      <y>10</y>
       <width>250</width>
       <height>250</height>
      </rect>
@@ -252,10 +252,10 @@
    <widget class="QLabel" name="fusionImageLabel">
     <property name="geometry">
      <rect>
-      <x>380</x>
+      <x>370</x>
       <y>10</y>
-      <width>524</width>
-      <height>524</height>
+      <width>520</width>
+      <height>520</height>
      </rect>
     </property>
     <property name="layoutDirection">
@@ -281,13 +281,61 @@
      <string>PseudoColor</string>
     </property>
    </widget>
+   <widget class="QLabel" name="clorbarHighLabel">
+    <property name="geometry">
+     <rect>
+      <x>900</x>
+      <y>10</y>
+      <width>40</width>
+      <height>12</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>1</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="colorbarLowLabel">
+    <property name="geometry">
+     <rect>
+      <x>900</x>
+      <y>520</y>
+      <width>40</width>
+      <height>12</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="colorbarImageLabel">
+    <property name="geometry">
+     <rect>
+      <x>900</x>
+      <y>30</y>
+      <width>40</width>
+      <height>481</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>LValue</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>934</width>
+     <width>950</width>
      <height>23</height>
     </rect>
    </property>
@@ -295,10 +343,16 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>

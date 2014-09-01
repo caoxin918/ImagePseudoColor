@@ -29,6 +29,7 @@ QT_BEGIN_NAMESPACE
 class Ui_ImagePseudoColorClass
 {
 public:
+    QAction *actionAbout;
     QWidget *centralWidget;
     QLineEdit *PhotographLineEdit;
     QPushButton *pushButtonPhotograph;
@@ -48,6 +49,9 @@ public:
     QLabel *luminescenceLabel;
     QLabel *fusionImageLabel;
     QPushButton *pushButtonPseudoColor;
+    QLabel *clorbarHighLabel;
+    QLabel *colorbarLowLabel;
+    QLabel *colorbarImageLabel;
     QMenuBar *menuBar;
     QMenu *menuAbout;
     QStatusBar *statusBar;
@@ -56,9 +60,11 @@ public:
     {
         if (ImagePseudoColorClass->objectName().isEmpty())
             ImagePseudoColorClass->setObjectName(QString::fromUtf8("ImagePseudoColorClass"));
-        ImagePseudoColorClass->resize(934, 588);
+        ImagePseudoColorClass->resize(950, 588);
         ImagePseudoColorClass->setMinimumSize(QSize(934, 588));
-        ImagePseudoColorClass->setMaximumSize(QSize(934, 588));
+        ImagePseudoColorClass->setMaximumSize(QSize(950, 588));
+        actionAbout = new QAction(ImagePseudoColorClass);
+        actionAbout->setObjectName(QString::fromUtf8("actionAbout"));
         centralWidget = new QWidget(ImagePseudoColorClass);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         PhotographLineEdit = new QLineEdit(centralWidget);
@@ -116,20 +122,32 @@ public:
         photographLabel->setAlignment(Qt::AlignCenter);
         luminescenceLabel = new QLabel(centralWidget);
         luminescenceLabel->setObjectName(QString::fromUtf8("luminescenceLabel"));
-        luminescenceLabel->setGeometry(QRect(110, 20, 250, 250));
+        luminescenceLabel->setGeometry(QRect(110, 10, 250, 250));
         luminescenceLabel->setAlignment(Qt::AlignCenter);
         fusionImageLabel = new QLabel(centralWidget);
         fusionImageLabel->setObjectName(QString::fromUtf8("fusionImageLabel"));
-        fusionImageLabel->setGeometry(QRect(380, 10, 524, 524));
+        fusionImageLabel->setGeometry(QRect(370, 10, 520, 520));
         fusionImageLabel->setLayoutDirection(Qt::LeftToRight);
         fusionImageLabel->setAlignment(Qt::AlignCenter);
         pushButtonPseudoColor = new QPushButton(centralWidget);
         pushButtonPseudoColor->setObjectName(QString::fromUtf8("pushButtonPseudoColor"));
         pushButtonPseudoColor->setGeometry(QRect(10, 320, 81, 31));
+        clorbarHighLabel = new QLabel(centralWidget);
+        clorbarHighLabel->setObjectName(QString::fromUtf8("clorbarHighLabel"));
+        clorbarHighLabel->setGeometry(QRect(900, 10, 40, 12));
+        clorbarHighLabel->setAlignment(Qt::AlignCenter);
+        colorbarLowLabel = new QLabel(centralWidget);
+        colorbarLowLabel->setObjectName(QString::fromUtf8("colorbarLowLabel"));
+        colorbarLowLabel->setGeometry(QRect(900, 520, 40, 12));
+        colorbarLowLabel->setAlignment(Qt::AlignCenter);
+        colorbarImageLabel = new QLabel(centralWidget);
+        colorbarImageLabel->setObjectName(QString::fromUtf8("colorbarImageLabel"));
+        colorbarImageLabel->setGeometry(QRect(900, 30, 40, 481));
+        colorbarImageLabel->setAlignment(Qt::AlignCenter);
         ImagePseudoColorClass->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(ImagePseudoColorClass);
         menuBar->setObjectName(QString::fromUtf8("menuBar"));
-        menuBar->setGeometry(QRect(0, 0, 934, 23));
+        menuBar->setGeometry(QRect(0, 0, 950, 23));
         menuAbout = new QMenu(menuBar);
         menuAbout->setObjectName(QString::fromUtf8("menuAbout"));
         ImagePseudoColorClass->setMenuBar(menuBar);
@@ -138,6 +156,7 @@ public:
         ImagePseudoColorClass->setStatusBar(statusBar);
 
         menuBar->addAction(menuAbout->menuAction());
+        menuAbout->addAction(actionAbout);
 
         retranslateUi(ImagePseudoColorClass);
 
@@ -147,6 +166,7 @@ public:
     void retranslateUi(QMainWindow *ImagePseudoColorClass)
     {
         ImagePseudoColorClass->setWindowTitle(QApplication::translate("ImagePseudoColorClass", "ImagePseudoColor", 0, QApplication::UnicodeUTF8));
+        actionAbout->setText(QApplication::translate("ImagePseudoColorClass", "About", 0, QApplication::UnicodeUTF8));
         pushButtonPhotograph->setText(QApplication::translate("ImagePseudoColorClass", "Photograph", 0, QApplication::UnicodeUTF8));
         pushButtonLuminescence->setText(QApplication::translate("ImagePseudoColorClass", "Luminescence", 0, QApplication::UnicodeUTF8));
         SubstractLineEdit->setText(QApplication::translate("ImagePseudoColorClass", "0", 0, QApplication::UnicodeUTF8));
@@ -161,6 +181,9 @@ public:
         luminescenceLabel->setText(QApplication::translate("ImagePseudoColorClass", "Luminescence", 0, QApplication::UnicodeUTF8));
         fusionImageLabel->setText(QApplication::translate("ImagePseudoColorClass", "Fusion", 0, QApplication::UnicodeUTF8));
         pushButtonPseudoColor->setText(QApplication::translate("ImagePseudoColorClass", "PseudoColor", 0, QApplication::UnicodeUTF8));
+        clorbarHighLabel->setText(QApplication::translate("ImagePseudoColorClass", "1", 0, QApplication::UnicodeUTF8));
+        colorbarLowLabel->setText(QApplication::translate("ImagePseudoColorClass", "0", 0, QApplication::UnicodeUTF8));
+        colorbarImageLabel->setText(QApplication::translate("ImagePseudoColorClass", "LValue", 0, QApplication::UnicodeUTF8));
         menuAbout->setTitle(QApplication::translate("ImagePseudoColorClass", "Help", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 
