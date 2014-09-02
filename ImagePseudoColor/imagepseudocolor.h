@@ -87,11 +87,6 @@ public:
 		colorbarLowValue=low;
 		colorbarHighValue=high;
 	}
-// 	void setMaxMinImageValues(PixelType low,PixelType high)
-// 	{
-// 		maxImageValue=high;
-// 		minImageValue=low;
-// 	}
 	void run();
 
 signals:

@@ -750,6 +750,9 @@ void ImagePseudoColor::on_pushButton_filter_clicked()
 	ui.pushButtonFilter->setEnabled(false);
 	filterValue=temp;
 	filterThread->kernelSize=filterValue;
+	filterFlag=false;
+	pseudocolorFlag=false;
+	fusionFlag=false;
 	filterThread->start();
 }
 void ImagePseudoColor::on_pushButton_pseudocolor_clicked()
@@ -773,6 +776,8 @@ void ImagePseudoColor::on_pushButton_pseudocolor_clicked()
 	}
 	ui.pushButtonPseudoColor->setEnabled(false);
 	pseudocolorThread->setColorbarValues(colorbarLowValue,colorbarHighValue);
+	fusionFlag=false;
+	pseudocolorFlag=false;
 	pseudocolorThread->start();
 }
 void ImagePseudoColor::on_pushButton_fusion_clicked()
@@ -909,8 +914,8 @@ void ImagePseudoColor::on_pushButton_clear_clicked()
 	ui.photographLabel->setText("Photograph");
 	ui.luminescenceLabel->setText("Luminescence");
 	ui.fusionImageLabel->setText("Fusion");
-	ui.clorbarHighLabel->setText("1");
-	ui.colorbarLowLabel->setText("0");
+	ui.clorbarHighLabel->setText("");
+	ui.colorbarLowLabel->setText("");
 	luminescneceFileName="";
 	photographFileName="";
 }
@@ -1051,14 +1056,11 @@ void ImagePseudoColor::receiveFilterSignal()
 
 	showLuminescenceData(".//tempFiles//filterData.tif");
 	filterFlag=true;
-	pseudocolorFlag=false;
-	fusionFlag=false;
 	ui.pushButtonFilter->setEnabled(true);
 }
 void ImagePseudoColor::receivePseudocolorSignal()
 {
 	showLuminescenceData(".//tempFiles//pseudocolorData.tif");
 	pseudocolorFlag=true;
-	fusionFlag=false;
 	ui.pushButtonPseudoColor->setEnabled(true);
 }
