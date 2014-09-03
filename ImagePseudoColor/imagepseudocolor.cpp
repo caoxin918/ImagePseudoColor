@@ -849,7 +849,7 @@ void ImagePseudoColor::clearFusionWindow()
 }
 void ImagePseudoColor::on_menuHelp_clicked()
 {
-	QMessageBox::information(this, tr("About"),QString("Author: Xin Cao\n")+"Email: caoxin918@gmail.com");  
+	QMessageBox::information(this, tr("About"),QString("Author: Xin Cao\n")+QString("Version: Beta 3.2\n")+QString("Email: caoxin918@gmail.com"));  
 }
 bool ImagePseudoColor::copyDirectoryFiles(QString fromDir,QString toDir,bool cover)
 {
@@ -1052,7 +1052,7 @@ void ImagePseudoColor::receiveFilterSignal()
 	cvMinMaxLoc(Image1,&minValue,&maxValue);
 	ui.spinBoxHighValue->setValue((int)(maxValue));
 	ui.spinBoxLowValue->setValue((int)(minValue));
-//	pseudocolorThread->setMaxMinImageValues(minValue,maxValue);
+	
 
 	showLuminescenceData(".//tempFiles//filterData.tif");
 	filterFlag=true;
@@ -1063,4 +1063,6 @@ void ImagePseudoColor::receivePseudocolorSignal()
 	showLuminescenceData(".//tempFiles//pseudocolorData.tif");
 	pseudocolorFlag=true;
 	ui.pushButtonPseudoColor->setEnabled(true);
+	ui.clorbarHighLabel->setText(ui.spinBoxHighValue->text());
+	ui.colorbarLowLabel->setText(ui.spinBoxLowValue->text());
 }
