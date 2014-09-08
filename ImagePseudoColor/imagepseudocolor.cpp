@@ -513,6 +513,7 @@ ImagePseudoColor::ImagePseudoColor(QWidget *parent, Qt::WFlags flags)
 	: QMainWindow(parent, flags)
 {
 	ui.setupUi(this);
+
 	QObject::connect(ui.pushButtonPhotograph,SIGNAL(clicked()),this,SLOT(on_pushButton_photograph_clicked()));
 	QObject::connect(ui.pushButtonLuminescence,SIGNAL(clicked()),this,SLOT(on_pushButton_luminescence_clicked()));
 	QObject::connect(ui.pushButtonSubstract,SIGNAL(clicked()),this,SLOT(on_pushButton_substract_clicked()));
@@ -523,6 +524,8 @@ ImagePseudoColor::ImagePseudoColor(QWidget *parent, Qt::WFlags flags)
 	QObject::connect(ui.pushButtonClear,SIGNAL(clicked()),this,SLOT(on_pushButton_clear_clicked()));
 	QObject::connect(ui.pushButtonQuit,SIGNAL(clicked()),this,SLOT(on_pushButton_quit_clicked()));
 	QObject::connect(ui.actionAbout,SIGNAL(triggered()),this,SLOT(on_menuHelp_clicked()));
+
+	QObject::connect(ui.actionImageBinning,SIGNAL(triggered()),this,SLOT(on_menuToolsImageBinning_clicked()));
 	initial();
 }
 
@@ -598,6 +601,8 @@ void ImagePseudoColor::initial()
 		ui.colorbarLowLabel->setText("");
 	}
 
+	imageBinning=NULL;
+	ui.actionImageBinning->setDisabled(true);//初始状态为不可用
 }
 
 void ImagePseudoColor::on_pushButton_photograph_clicked()
@@ -690,6 +695,8 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 		fusionFlag=false;
 		luminescneceFileName=path;
 		ui.LuminescenceLineEdit->setText(path);
+
+		ui.actionImageBinning->setDisabled(false);//active
 	}	
 }
 
@@ -851,6 +858,17 @@ void ImagePseudoColor::on_menuHelp_clicked()
 {
 	QMessageBox::information(this, tr("About"),QString("Author: Xin Cao\n")+QString("Version: Beta 3.2\n")+QString("Email: caoxin918@gmail.com"));  
 }
+void ImagePseudoColor::on_menuToolsImageBinning_clicked()
+{
+	imageBinning=new ImageSoftwareBinningclass();
+	imageBinning->setFileName(luminescneceFileName);
+	imageBinning->showOriginalImage(luminescneceFileName);
+	imageBinning->show();
+	imageBinning->activateWindow();
+
+	
+}
+
 bool ImagePseudoColor::copyDirectoryFiles(QString fromDir,QString toDir,bool cover)
 {
 	QDir sourceDir(fromDir);
@@ -874,6 +892,7 @@ bool ImagePseudoColor::copyDirectoryFiles(QString fromDir,QString toDir,bool cov
 			return false;
 		}
 	}
+	return true;
 }
 void ImagePseudoColor::on_pushButton_save_clicked()
 {

@@ -30,6 +30,10 @@ class Ui_ImagePseudoColorClass
 {
 public:
     QAction *actionAbout;
+    QAction *actionImageBinning;
+    QAction *actionConvertTo8Bit;
+    QAction *actionHistogram;
+    QAction *actionThreashold;
     QWidget *centralWidget;
     QLineEdit *PhotographLineEdit;
     QPushButton *pushButtonPhotograph;
@@ -54,6 +58,7 @@ public:
     QLabel *colorbarImageLabel;
     QMenuBar *menuBar;
     QMenu *menuAbout;
+    QMenu *menuTools;
     QStatusBar *statusBar;
 
     void setupUi(QMainWindow *ImagePseudoColorClass)
@@ -68,6 +73,14 @@ public:
         ImagePseudoColorClass->setWindowIcon(icon);
         actionAbout = new QAction(ImagePseudoColorClass);
         actionAbout->setObjectName(QString::fromUtf8("actionAbout"));
+        actionImageBinning = new QAction(ImagePseudoColorClass);
+        actionImageBinning->setObjectName(QString::fromUtf8("actionImageBinning"));
+        actionConvertTo8Bit = new QAction(ImagePseudoColorClass);
+        actionConvertTo8Bit->setObjectName(QString::fromUtf8("actionConvertTo8Bit"));
+        actionHistogram = new QAction(ImagePseudoColorClass);
+        actionHistogram->setObjectName(QString::fromUtf8("actionHistogram"));
+        actionThreashold = new QAction(ImagePseudoColorClass);
+        actionThreashold->setObjectName(QString::fromUtf8("actionThreashold"));
         centralWidget = new QWidget(ImagePseudoColorClass);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         PhotographLineEdit = new QLineEdit(centralWidget);
@@ -153,13 +166,20 @@ public:
         menuBar->setGeometry(QRect(0, 0, 950, 23));
         menuAbout = new QMenu(menuBar);
         menuAbout->setObjectName(QString::fromUtf8("menuAbout"));
+        menuTools = new QMenu(menuBar);
+        menuTools->setObjectName(QString::fromUtf8("menuTools"));
         ImagePseudoColorClass->setMenuBar(menuBar);
         statusBar = new QStatusBar(ImagePseudoColorClass);
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
         ImagePseudoColorClass->setStatusBar(statusBar);
 
+        menuBar->addAction(menuTools->menuAction());
         menuBar->addAction(menuAbout->menuAction());
         menuAbout->addAction(actionAbout);
+        menuTools->addAction(actionImageBinning);
+        menuTools->addAction(actionConvertTo8Bit);
+        menuTools->addAction(actionHistogram);
+        menuTools->addAction(actionThreashold);
 
         retranslateUi(ImagePseudoColorClass);
 
@@ -170,6 +190,10 @@ public:
     {
         ImagePseudoColorClass->setWindowTitle(QApplication::translate("ImagePseudoColorClass", "ImagePseudoColor", 0, QApplication::UnicodeUTF8));
         actionAbout->setText(QApplication::translate("ImagePseudoColorClass", "About", 0, QApplication::UnicodeUTF8));
+        actionImageBinning->setText(QApplication::translate("ImagePseudoColorClass", "ImageBinning", 0, QApplication::UnicodeUTF8));
+        actionConvertTo8Bit->setText(QApplication::translate("ImagePseudoColorClass", "ConvertTo8Bit", 0, QApplication::UnicodeUTF8));
+        actionHistogram->setText(QApplication::translate("ImagePseudoColorClass", "Histogram", 0, QApplication::UnicodeUTF8));
+        actionThreashold->setText(QApplication::translate("ImagePseudoColorClass", "Threashold", 0, QApplication::UnicodeUTF8));
         pushButtonPhotograph->setText(QApplication::translate("ImagePseudoColorClass", "Photograph", 0, QApplication::UnicodeUTF8));
         pushButtonLuminescence->setText(QApplication::translate("ImagePseudoColorClass", "Luminescence", 0, QApplication::UnicodeUTF8));
         SubstractLineEdit->setText(QApplication::translate("ImagePseudoColorClass", "0", 0, QApplication::UnicodeUTF8));
@@ -188,6 +212,7 @@ public:
         colorbarLowLabel->setText(QApplication::translate("ImagePseudoColorClass", "0", 0, QApplication::UnicodeUTF8));
         colorbarImageLabel->setText(QApplication::translate("ImagePseudoColorClass", "LValue", 0, QApplication::UnicodeUTF8));
         menuAbout->setTitle(QApplication::translate("ImagePseudoColorClass", "Help", 0, QApplication::UnicodeUTF8));
+        menuTools->setTitle(QApplication::translate("ImagePseudoColorClass", "Tools", 0, QApplication::UnicodeUTF8));
     } // retranslateUi
 
 };

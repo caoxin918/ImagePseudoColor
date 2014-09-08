@@ -6,6 +6,8 @@
 #include "QImage"
 #include "qthread.h"
 
+#include "imagesoftwarebinningclass.h"
+
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
@@ -93,6 +95,7 @@ signals:
 	void done();
 };
 
+
 class ImagePseudoColor : public QMainWindow
 {
 	Q_OBJECT
@@ -105,6 +108,10 @@ private:
 	Ui::ImagePseudoColorClass ui;
 	FilterThread *filterThread;
 	PseudocolorThread *pseudocolorThread;
+
+	ImageSoftwareBinningclass *imageBinning;
+	
+	
 
 private slots:
 	void on_pushButton_photograph_clicked();
@@ -119,6 +126,8 @@ private slots:
 	void receiveFilterSignal();
 	void receivePseudocolorSignal();
 	void on_menuHelp_clicked();
+
+	void on_menuToolsImageBinning_clicked();
 
 private:
 	bool photographFlag;
