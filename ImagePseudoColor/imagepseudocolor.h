@@ -128,6 +128,7 @@ private slots:
 	void on_menuHelp_clicked();
 
 	void on_menuToolsImageBinning_clicked();
+	void receiveBinningSignal(bool);
 
 private:
 	bool photographFlag;
@@ -176,6 +177,7 @@ private:
 	void clearFusionWindow();
 
 	bool copyDirectoryFiles(QString fromDir,QString toDir,bool cover);
+	bool copyFileToPath(QString sourceDir ,QString toDir, bool coverFileIfExist);
 	bool removeDirWithContent(const QString &dirName);
 };
 

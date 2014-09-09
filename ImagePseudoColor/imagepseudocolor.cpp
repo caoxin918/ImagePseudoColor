@@ -526,6 +526,7 @@ ImagePseudoColor::ImagePseudoColor(QWidget *parent, Qt::WFlags flags)
 	QObject::connect(ui.actionAbout,SIGNAL(triggered()),this,SLOT(on_menuHelp_clicked()));
 
 	QObject::connect(ui.actionImageBinning,SIGNAL(triggered()),this,SLOT(on_menuToolsImageBinning_clicked()));
+	
 	initial();
 }
 
@@ -565,8 +566,9 @@ void ImagePseudoColor::initial()
 
 	filterThread=new FilterThread;
 	pseudocolorThread=new PseudocolorThread;
-	connect(filterThread,SIGNAL(done()),this,SLOT(receiveFilterSignal()));
-	connect(pseudocolorThread,SIGNAL(done()),this,SLOT(receivePseudocolorSignal()));
+	QObject::connect(filterThread,SIGNAL(done()),this,SLOT(receiveFilterSignal()));
+	QObject::connect(pseudocolorThread,SIGNAL(done()),this,SLOT(receivePseudocolorSignal()));
+	
 
 	QRegExp regx("[0-9]+$");
 	QValidator *validator1 = new QRegExpValidator(regx,ui.SubstractLineEdit);
@@ -612,6 +614,14 @@ void ImagePseudoColor::on_pushButton_photograph_clicked()
 		QMessageBox::information(NULL,"Warning","Initial failed.");
 		return;
 	}
+	if(!luminescenceFlag)
+	{
+		return;
+	}
+
+	QFile::remove(".//tempFiles//photographImageResize.tif");
+	QFile::remove(".//tempFiles//originalPhotograph.tif");
+
 	QString path=QFileDialog::getOpenFileName(this,"Open photograph",".","tiff Files(*.tif)");
 	if (path.length()==0)
 	{
@@ -634,14 +644,25 @@ void ImagePseudoColor::on_pushButton_photograph_clicked()
 			return;
 		}
 		photographFlag=true;
-		if(!showPhotographData(path))
+		
+		photographFileName=path;//将白光图像的完整路径复制给photographFileName变量
+		imwrite(".//tempFiles//originalPhotograph.tif",tempData);
+
+		Mat lumi=imread(string((const char *)luminescneceFileName.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+		if(tempData.size!=lumi.size)
+		{
+			Mat binningWithResizeImag;
+			cv::resize(tempData, binningWithResizeImag, Size(lumi.rows,lumi.cols));
+			imwrite(".//tempFiles//photographImageResize.tif",binningWithResizeImag);
+			photographFileName=".//tempFiles//photographImageResize.tif";
+		}
+		if(!showPhotographData(photographFileName))
 		{
 			delete photographImage;
 			photographFlag=false;
 			return;
 		}
-		photographFileName=path;//将白光图像的完整路径复制给photographFileName变量
-		ui.PhotographLineEdit->setText(path);
+		ui.PhotographLineEdit->setText(photographFileName);
 	}	
 }
 
@@ -653,6 +674,31 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 		return;
 	}
 	clearFusionWindow();
+	
+	if(!removeDirWithContent(".//tempFiles"))
+	{
+		QMessageBox::information(NULL,"Warning","Delete tempfiles failed.");
+	}
+	QDir targetDir(".//tempFiles");//创建临时文件夹
+	if(!targetDir.exists())
+	{
+		initialFlag=false;
+		if(!targetDir.mkdir(targetDir.absolutePath()))
+		{
+			QMessageBox::information(NULL,"Warning","Cannot create the temp file.");
+			initialFlag=false;
+		}
+		else
+		{
+			initialFlag=true;
+		}
+	}
+	else
+	{
+		initialFlag=true;
+	}
+
+	ui.actionImageBinning->setDisabled(true);
 	QString path=QFileDialog::getOpenFileName(this,"Open luminescence",".","tiff Files(*.tif)");
 	if (path.length()==0)
 	{
@@ -694,6 +740,7 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 		pseudocolorFlag=false;
 		fusionFlag=false;
 		luminescneceFileName=path;
+		imwrite(".//tempFiles//originalLuminescence.tif",tempData);
 		ui.LuminescenceLineEdit->setText(path);
 
 		ui.actionImageBinning->setDisabled(false);//active
@@ -760,6 +807,15 @@ void ImagePseudoColor::on_pushButton_filter_clicked()
 	filterFlag=false;
 	pseudocolorFlag=false;
 	fusionFlag=false;
+	ui.pushButtonLuminescence->setEnabled(false);
+	ui.pushButtonPhotograph->setEnabled(false);
+	ui.pushButtonSubstract->setEnabled(false);
+	ui.SubstractLineEdit->setReadOnly(true);
+	ui.FilterLineEdit->setReadOnly(true);
+	ui.spinBoxHighValue->setEnabled(false);
+	ui.spinBoxLowValue->setEnabled(false);
+	ui.pushButtonClear->setEnabled(false);
+	ui.pushButtonQuit->setEnabled(false);
 	filterThread->start();
 }
 void ImagePseudoColor::on_pushButton_pseudocolor_clicked()
@@ -785,6 +841,16 @@ void ImagePseudoColor::on_pushButton_pseudocolor_clicked()
 	pseudocolorThread->setColorbarValues(colorbarLowValue,colorbarHighValue);
 	fusionFlag=false;
 	pseudocolorFlag=false;
+
+	ui.pushButtonFilter->setEnabled(false);
+	ui.pushButtonLuminescence->setEnabled(false);
+	ui.pushButtonPhotograph->setEnabled(false);
+	ui.pushButtonSubstract->setEnabled(false);
+	ui.SubstractLineEdit->setReadOnly(true);
+	ui.FilterLineEdit->setReadOnly(true);
+	ui.pushButtonClear->setEnabled(false);
+	ui.pushButtonQuit->setEnabled(false);
+
 	pseudocolorThread->start();
 }
 void ImagePseudoColor::on_pushButton_fusion_clicked()
@@ -803,16 +869,22 @@ void ImagePseudoColor::on_pushButton_fusion_clicked()
 	tempITKLuminesenceData=readImage(".//tempFiles//filterData.tif");
 	Mat photo=imread(string((const char *)photographFileName.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_GRAYSCALE);//这里刻意用8bit格式来读取，然后保存成8bit
 	Mat lumi=imread(string((const char *)luminescneceFileName.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+	
 	if(photo.size!=lumi.size)
 	{
-		QMessageBox::information(NULL,"Warning","The sizes of photograph and luminescence are not the same.");
-		fusionFlag=false;
-		return;
+// 		QMessageBox::information(NULL,"Warning","The sizes of photograph and luminescence are not the same.");
+// 		fusionFlag=false;
+// 		return;
+		/*由于大小不一致，强制性将白光图像的大小resize到荧光图像大小*/
+// 		Mat binningWithResizeImag;
+// 		cv::resize(photo, binningWithResizeImag, Size(lumi.rows,lumi.cols));
+// 		imwrite(".//tempFiles//photographImageResize.tif",binningWithResizeImag);
+// 		photographFileName=QString(".//tempFiles//photographImageResize.tif");
+// 		photographData=readImage(".//tempFiles//photographImageResize.tif");
 	}
-	imwrite(".//tempFiles//origianlPhotograph.tif",photo);
-	imwrite(".//tempFiles//originalLuminescence.tif",lumi);
 	ImageType::Pointer photographData=ImageType::New();
-	photographData=readImage(".//tempFiles//origianlPhotograph.tif");
+	photographData=readImage(photographFileName);
+	
 
 	RGBImageType::Pointer pseudocolorData=RGBImageType::New();
 	pseudocolorData=readRGBImage(".//tempFiles//pseudocolorData.tif");
@@ -842,7 +914,6 @@ void ImagePseudoColor::on_pushButton_fusion_clicked()
 	fusionFlag=true;
 	ui.clorbarHighLabel->setText(ui.spinBoxHighValue->text());
 	ui.colorbarLowLabel->setText(ui.spinBoxLowValue->text());
-
 }
 void ImagePseudoColor::on_pushButton_quit_clicked()
 {
@@ -856,17 +927,40 @@ void ImagePseudoColor::clearFusionWindow()
 }
 void ImagePseudoColor::on_menuHelp_clicked()
 {
-	QMessageBox::information(this, tr("About"),QString("Author: Xin Cao\n")+QString("Version: Beta 3.2\n")+QString("Email: caoxin918@gmail.com"));  
+	QMessageBox::information(this, tr("About"),QString("Author: Xin Cao\n")+QString("Version: Beta 3.3\n")+QString("Email: caoxin918@gmail.com"));  
 }
 void ImagePseudoColor::on_menuToolsImageBinning_clicked()
 {
 	imageBinning=new ImageSoftwareBinningclass();
 	imageBinning->setFileName(luminescneceFileName);
 	imageBinning->showOriginalImage(luminescneceFileName);
+	QObject::connect(imageBinning,SIGNAL(done(bool)),this,SLOT(receiveBinningSignal(bool)));
 	imageBinning->show();
 	imageBinning->activateWindow();
 
 	
+}
+bool ImagePseudoColor::copyFileToPath(QString sourceDir ,QString toDir, bool coverFileIfExist)
+{
+	toDir.replace("\\","/");  
+	if (sourceDir == toDir){  
+		return true;  
+	}  
+	if (!QFile::exists(sourceDir)){  
+		return false;  
+	}  
+	QDir *createfile     = new QDir;  
+	bool exist = createfile->exists(toDir);  
+	if (exist){  
+		if(coverFileIfExist){  
+			createfile->remove(toDir);  
+		}  
+	}
+	if(!QFile::copy(sourceDir, toDir))  
+	{  
+		return false;  
+	}  
+	return true; 
 }
 
 bool ImagePseudoColor::copyDirectoryFiles(QString fromDir,QString toDir,bool cover)
@@ -918,6 +1012,29 @@ void ImagePseudoColor::on_pushButton_save_clicked()
 }
 void ImagePseudoColor::on_pushButton_clear_clicked()
 {
+	if(!removeDirWithContent(".//tempFiles"))
+	{
+		QMessageBox::information(NULL,"Warning","Delete tempfiles failed.");
+	}
+	QDir targetDir(".//tempFiles");//创建临时文件夹
+	if(!targetDir.exists())
+	{
+		initialFlag=false;
+		if(!targetDir.mkdir(targetDir.absolutePath()))
+		{
+			QMessageBox::information(NULL,"Warning","Cannot create the temp file.");
+			initialFlag=false;
+		}
+		else
+		{
+			initialFlag=true;
+		}
+	}
+	else
+	{
+		initialFlag=true;
+	}
+
 	photographFlag=false;
 	luminescenceFlag=false;
 	substractFlag=false;
@@ -937,6 +1054,7 @@ void ImagePseudoColor::on_pushButton_clear_clicked()
 	ui.colorbarLowLabel->setText("");
 	luminescneceFileName="";
 	photographFileName="";
+	ui.actionImageBinning->setDisabled(true);
 }
 bool ImagePseudoColor::removeDirWithContent(const QString &dirName)
 {
@@ -974,7 +1092,7 @@ bool ImagePseudoColor::removeDirWithContent(const QString &dirName)
 						return false;  
 					}  
 				}  
-				curFi++;  
+				curFi++;
 			}//end of while  
 		}  
 	}  
@@ -1076,6 +1194,15 @@ void ImagePseudoColor::receiveFilterSignal()
 	showLuminescenceData(".//tempFiles//filterData.tif");
 	filterFlag=true;
 	ui.pushButtonFilter->setEnabled(true);
+	ui.pushButtonLuminescence->setEnabled(true);
+	ui.pushButtonPhotograph->setEnabled(true);
+	ui.pushButtonSubstract->setEnabled(true);
+	ui.SubstractLineEdit->setReadOnly(false);
+	ui.FilterLineEdit->setReadOnly(false);
+	ui.spinBoxHighValue->setEnabled(true);
+	ui.spinBoxLowValue->setEnabled(true);
+	ui.pushButtonClear->setEnabled(true);
+	ui.pushButtonQuit->setEnabled(true);
 }
 void ImagePseudoColor::receivePseudocolorSignal()
 {
@@ -1084,4 +1211,57 @@ void ImagePseudoColor::receivePseudocolorSignal()
 	ui.pushButtonPseudoColor->setEnabled(true);
 	ui.clorbarHighLabel->setText(ui.spinBoxHighValue->text());
 	ui.colorbarLowLabel->setText(ui.spinBoxLowValue->text());
+
+	ui.pushButtonFilter->setEnabled(true);
+	ui.pushButtonLuminescence->setEnabled(true);
+	ui.pushButtonPhotograph->setEnabled(true);
+	ui.pushButtonSubstract->setEnabled(true);
+	ui.SubstractLineEdit->setReadOnly(false);
+	ui.FilterLineEdit->setReadOnly(false);
+	ui.pushButtonClear->setEnabled(true);
+	ui.pushButtonQuit->setEnabled(true);
+}
+void ImagePseudoColor::receiveBinningSignal(bool isResized)
+{
+	substractFlag=false;
+	filterFlag=false;
+	pseudocolorFlag=false;
+	fusionFlag=false;
+	ui.luminescenceLabel->setText("luminescence");
+	delete luminescneceImage;
+	luminescneceFileName="";
+	clearFusionWindow();
+
+	if(isResized)
+	{
+		luminescneceFileName=".//tempFiles//binningLuminescenceImageAfterResize.tif";
+	}
+	else//没有resize，即生成的荧光比原来小了，故要对白光进行相应的调整
+	{
+		QFile::remove(".//tempFiles//binningLuminescenceImageAfterResize.tif");
+		luminescneceFileName=".//tempFiles//binningLuminescenceImage.tif";
+		if(photographFlag)
+		{
+			Mat lumi=imread(string((const char *)luminescneceFileName.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+			Mat photo=imread(".//tempFiles//originalPhotograph.tif",CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+			if(photo.size!=lumi.size)
+			{
+				Mat binningWithResizeImag;
+				cv::resize(photo, binningWithResizeImag, Size(lumi.rows,lumi.cols));
+				imwrite(".//tempFiles//photographImageResize.tif",binningWithResizeImag);
+				photographFileName=".//tempFiles//photographImageResize.tif";
+			}
+			if(!showPhotographData(photographFileName))
+			{
+				delete photographImage;
+				photographFlag=false;
+				return;
+			}
+			ui.PhotographLineEdit->setText(photographFileName);
+		}
+		
+	}
+	
+	ui.LuminescenceLineEdit->setText(luminescneceFileName);
+	showLuminescenceData(luminescneceFileName);
 }
