@@ -675,9 +675,14 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 	}
 	clearFusionWindow();
 	
+	photographFlag=false;
+	photographFileName="";
+	ui.PhotographLineEdit->setText("");
+	ui.photographLabel->setText("Photograph");
+
 	if(!removeDirWithContent(".//tempFiles"))
 	{
-		QMessageBox::information(NULL,"Warning","Delete tempfiles failed.");
+		//QMessageBox::information(NULL,"Warning","Delete tempfiles failed.");
 	}
 	QDir targetDir(".//tempFiles");//创建临时文件夹
 	if(!targetDir.exists())
@@ -1014,7 +1019,7 @@ void ImagePseudoColor::on_pushButton_clear_clicked()
 {
 	if(!removeDirWithContent(".//tempFiles"))
 	{
-		QMessageBox::information(NULL,"Warning","Delete tempfiles failed.");
+		//QMessageBox::information(NULL,"Warning","Delete tempfiles failed.");
 	}
 	QDir targetDir(".//tempFiles");//创建临时文件夹
 	if(!targetDir.exists())

@@ -45,6 +45,7 @@ ImageSoftwareBinningclass::ImageSoftwareBinningclass(QWidget *parent)
 	VBinningValue=0;
 	saveBinningImg=false;
 	binningProcessed=false;
+	isReisedToOriginal=false;
 }
 
 ImageSoftwareBinningclass::~ImageSoftwareBinningclass()
@@ -53,7 +54,7 @@ ImageSoftwareBinningclass::~ImageSoftwareBinningclass()
 	{
 		saveBinningImg=false;
 		binningProcessed=false;
-		emit done(ui.checkBox_resize->isChecked());
+		emit done(isReisedToOriginal);
 		
 	}
 	else
@@ -148,6 +149,7 @@ void ImageSoftwareBinningclass::on_pushButton_ok_clicked()
 		cv::resize(binningImage, binningWithResizeImag, Size(originalHSize,originalVSize)); //默认就是双线性插值
 		imwrite(".//tempFiles//binningLuminescenceImageAfterResize.tif",binningWithResizeImag);
 		showImage(".//tempFiles//binningLuminescenceImageAfterResize.tif");
+		isReisedToOriginal=true;
 	}
 	imwrite(".//tempFiles//binningLuminescenceImage.tif",binningImage);
 	showImage(".//tempFiles//binningLuminescenceImage.tif");
