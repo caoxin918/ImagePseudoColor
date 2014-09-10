@@ -65,6 +65,7 @@ public:
     {
         if (ImagePseudoColorClass->objectName().isEmpty())
             ImagePseudoColorClass->setObjectName(QString::fromUtf8("ImagePseudoColorClass"));
+        ImagePseudoColorClass->setWindowModality(Qt::WindowModal);
         ImagePseudoColorClass->resize(950, 588);
         ImagePseudoColorClass->setMinimumSize(QSize(950, 588));
         ImagePseudoColorClass->setMaximumSize(QSize(950, 588));

@@ -9,6 +9,7 @@ ImageSoftwareBinningclass::ImageSoftwareBinningclass(QWidget *parent)
 	ui.setupUi(this);
 	setAttribute(Qt::WA_DeleteOnClose);
 
+
 	QObject::connect(ui.pushButtonSaveClose,SIGNAL(clicked()),this,SLOT(on_pushButton_quit_clicked()));
 	QObject::connect(ui.radioButton_2,SIGNAL(clicked()),this,SLOT(on_radioButton_checked()));
 	QObject::connect(ui.radioButton_4,SIGNAL(clicked()),this,SLOT(on_radioButton_checked()));
@@ -63,6 +64,7 @@ ImageSoftwareBinningclass::~ImageSoftwareBinningclass()
 		QFile::remove(".//tempFiles//binningLuminescenceImageAfterResize.tif");
 		saveBinningImg=false;
 		binningProcessed=false;
+		emit doneWithoutBinning();
 	}
 	
 }
@@ -223,5 +225,9 @@ void ImageSoftwareBinningclass::saveBinningImage()
 void ImageSoftwareBinningclass::on_pushButton_quit_clicked()
 {
 	saveBinningImg=true;
+	this->close();
+}
+void ImageSoftwareBinningclass::closeWindow()
+{
 	this->close();
 }

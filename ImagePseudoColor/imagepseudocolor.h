@@ -129,6 +129,7 @@ private slots:
 
 	void on_menuToolsImageBinning_clicked();
 	void receiveBinningSignal(bool);
+	void receiveNoBinningSignal();
 
 private:
 	bool photographFlag;

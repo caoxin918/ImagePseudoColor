@@ -603,7 +603,7 @@ void ImagePseudoColor::initial()
 		ui.colorbarLowLabel->setText("");
 	}
 
-	imageBinning=NULL;
+	//imageBinning=NULL;
 	ui.actionImageBinning->setDisabled(true);//初始状态为不可用
 }
 
@@ -936,14 +936,14 @@ void ImagePseudoColor::on_menuHelp_clicked()
 }
 void ImagePseudoColor::on_menuToolsImageBinning_clicked()
 {
-	imageBinning=new ImageSoftwareBinningclass();
+ 	imageBinning=new ImageSoftwareBinningclass();
 	imageBinning->setFileName(luminescneceFileName);
 	imageBinning->showOriginalImage(luminescneceFileName);
 	QObject::connect(imageBinning,SIGNAL(done(bool)),this,SLOT(receiveBinningSignal(bool)));
+	QObject::connect(imageBinning,SIGNAL(doneWithoutBinning()),this,SLOT(receiveNoBinningSignal()));
 	imageBinning->show();
 	imageBinning->activateWindow();
-
-	
+	this->setDisabled(true);
 }
 bool ImagePseudoColor::copyFileToPath(QString sourceDir ,QString toDir, bool coverFileIfExist)
 {
@@ -1226,6 +1226,10 @@ void ImagePseudoColor::receivePseudocolorSignal()
 	ui.pushButtonClear->setEnabled(true);
 	ui.pushButtonQuit->setEnabled(true);
 }
+void ImagePseudoColor::receiveNoBinningSignal()
+{
+	this->setDisabled(false);
+}
 void ImagePseudoColor::receiveBinningSignal(bool isResized)
 {
 	substractFlag=false;
@@ -1236,7 +1240,7 @@ void ImagePseudoColor::receiveBinningSignal(bool isResized)
 	delete luminescneceImage;
 	luminescneceFileName="";
 	clearFusionWindow();
-
+	this->setDisabled(false);
 	if(isResized)
 	{
 		luminescneceFileName=".//tempFiles//binningLuminescenceImageAfterResize.tif";
@@ -1269,4 +1273,5 @@ void ImagePseudoColor::receiveBinningSignal(bool isResized)
 	
 	ui.LuminescenceLineEdit->setText(luminescneceFileName);
 	showLuminescenceData(luminescneceFileName);
+//	imageBinning=NULL;
 }

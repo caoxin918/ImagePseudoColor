@@ -20,6 +20,7 @@ public:
 	void showImage(QString path);
 	void showOriginalImage(QString path);
 	void saveBinningImage();
+	void closeWindow();
 	~ImageSoftwareBinningclass();
 
 private slots:
@@ -51,6 +52,7 @@ private:
 
 signals:
 	void done(bool);
+	void doneWithoutBinning();
 };
 
 #endif // IMAGESOFTWAREBINNINGCLASS_H
