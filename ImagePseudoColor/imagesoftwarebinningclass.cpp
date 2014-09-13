@@ -46,7 +46,7 @@ ImageSoftwareBinningclass::ImageSoftwareBinningclass(QWidget *parent)
 	VBinningValue=0;
 	saveBinningImg=false;
 	binningProcessed=false;
-	isReisedToOriginal=false;
+	isResisedToOriginal=false;
 }
 
 ImageSoftwareBinningclass::~ImageSoftwareBinningclass()
@@ -55,7 +55,7 @@ ImageSoftwareBinningclass::~ImageSoftwareBinningclass()
 	{
 		saveBinningImg=false;
 		binningProcessed=false;
-		emit done(isReisedToOriginal);
+		emit done(isResisedToOriginal);
 		
 	}
 	else
@@ -151,7 +151,7 @@ void ImageSoftwareBinningclass::on_pushButton_ok_clicked()
 		cv::resize(binningImage, binningWithResizeImag, Size(originalHSize,originalVSize)); //默认就是双线性插值
 		imwrite(".//tempFiles//binningLuminescenceImageAfterResize.tif",binningWithResizeImag);
 		showImage(".//tempFiles//binningLuminescenceImageAfterResize.tif");
-		isReisedToOriginal=true;
+		isResisedToOriginal=true;
 	}
 	imwrite(".//tempFiles//binningLuminescenceImage.tif",binningImage);
 	showImage(".//tempFiles//binningLuminescenceImage.tif");
@@ -208,8 +208,8 @@ void ImageSoftwareBinningclass::showOriginalImage(QString path)
 	*imgScaled=luminescneceImage->scaled(ui.label_originalImage->width(),ui.label_originalImage->height(),Qt::KeepAspectRatio);
 	ui.label_originalImage->setPixmap(QPixmap::fromImage(*imgScaled));
 	originalImage=imread(string((const char *)luminescneceFileName.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
-	originalHSize=originalImage.rows;//行
-	originalVSize=originalImage.cols;//列
+	originalHSize=originalImage.rows;//原始图像的行
+	originalVSize=originalImage.cols;//原始图像的列
 	
 }
 

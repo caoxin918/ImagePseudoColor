@@ -33,7 +33,7 @@ public:
     QAction *actionImageBinning;
     QAction *actionConvertTo8Bit;
     QAction *actionHistogram;
-    QAction *actionThreashold;
+    QAction *actionImageThreasholdProcess;
     QWidget *centralWidget;
     QLineEdit *PhotographLineEdit;
     QPushButton *pushButtonPhotograph;
@@ -80,8 +80,8 @@ public:
         actionConvertTo8Bit->setObjectName(QString::fromUtf8("actionConvertTo8Bit"));
         actionHistogram = new QAction(ImagePseudoColorClass);
         actionHistogram->setObjectName(QString::fromUtf8("actionHistogram"));
-        actionThreashold = new QAction(ImagePseudoColorClass);
-        actionThreashold->setObjectName(QString::fromUtf8("actionThreashold"));
+        actionImageThreasholdProcess = new QAction(ImagePseudoColorClass);
+        actionImageThreasholdProcess->setObjectName(QString::fromUtf8("actionImageThreasholdProcess"));
         centralWidget = new QWidget(ImagePseudoColorClass);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         PhotographLineEdit = new QLineEdit(centralWidget);
@@ -178,9 +178,7 @@ public:
         menuBar->addAction(menuAbout->menuAction());
         menuAbout->addAction(actionAbout);
         menuTools->addAction(actionImageBinning);
-        menuTools->addAction(actionConvertTo8Bit);
-        menuTools->addAction(actionHistogram);
-        menuTools->addAction(actionThreashold);
+        menuTools->addAction(actionImageThreasholdProcess);
 
         retranslateUi(ImagePseudoColorClass);
 
@@ -194,7 +192,7 @@ public:
         actionImageBinning->setText(QApplication::translate("ImagePseudoColorClass", "ImageBinning", 0, QApplication::UnicodeUTF8));
         actionConvertTo8Bit->setText(QApplication::translate("ImagePseudoColorClass", "ConvertTo8Bit", 0, QApplication::UnicodeUTF8));
         actionHistogram->setText(QApplication::translate("ImagePseudoColorClass", "Histogram", 0, QApplication::UnicodeUTF8));
-        actionThreashold->setText(QApplication::translate("ImagePseudoColorClass", "Threashold", 0, QApplication::UnicodeUTF8));
+        actionImageThreasholdProcess->setText(QApplication::translate("ImagePseudoColorClass", "ImageThreasholdProcess", 0, QApplication::UnicodeUTF8));
         pushButtonPhotograph->setText(QApplication::translate("ImagePseudoColorClass", "Photograph", 0, QApplication::UnicodeUTF8));
         pushButtonLuminescence->setText(QApplication::translate("ImagePseudoColorClass", "Luminescence", 0, QApplication::UnicodeUTF8));
         SubstractLineEdit->setText(QApplication::translate("ImagePseudoColorClass", "0", 0, QApplication::UnicodeUTF8));

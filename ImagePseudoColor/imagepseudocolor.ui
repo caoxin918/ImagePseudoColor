@@ -357,9 +357,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionImageBinning"/>
-    <addaction name="actionConvertTo8Bit"/>
-    <addaction name="actionHistogram"/>
-    <addaction name="actionThreashold"/>
+    <addaction name="actionImageThreasholdProcess"/>
    </widget>
    <addaction name="menuTools"/>
    <addaction name="menuAbout"/>
@@ -385,9 +383,9 @@
     <string>Histogram</string>
    </property>
   </action>
-  <action name="actionThreashold">
+  <action name="actionImageThreasholdProcess">
    <property name="text">
-    <string>Threashold</string>
+    <string>ImageThreasholdProcess</string>
    </property>
   </action>
  </widget>

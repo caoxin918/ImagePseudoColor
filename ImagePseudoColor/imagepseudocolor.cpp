@@ -526,6 +526,7 @@ ImagePseudoColor::ImagePseudoColor(QWidget *parent, Qt::WFlags flags)
 	QObject::connect(ui.actionAbout,SIGNAL(triggered()),this,SLOT(on_menuHelp_clicked()));
 
 	QObject::connect(ui.actionImageBinning,SIGNAL(triggered()),this,SLOT(on_menuToolsImageBinning_clicked()));
+	QObject::connect(ui.actionImageThreasholdProcess,SIGNAL(triggered()),this,SLOT(on_menuToolsImageThreasholdProcess_clicked()));
 	
 	initial();
 }
@@ -575,6 +576,7 @@ void ImagePseudoColor::initial()
 	ui.SubstractLineEdit->setValidator(validator1);
 	QValidator *validator2 = new QRegExpValidator(regx,ui.FilterLineEdit);
 	ui.FilterLineEdit->setValidator(validator2);
+	removeDirWithContent(".//tempFiles");
 	QDir targetDir(".//tempFiles");//创建临时文件夹
 	if(!targetDir.exists())
 	{
@@ -605,6 +607,7 @@ void ImagePseudoColor::initial()
 
 	//imageBinning=NULL;
 	ui.actionImageBinning->setDisabled(true);//初始状态为不可用
+	ui.actionImageThreasholdProcess->setDisabled(true);
 }
 
 void ImagePseudoColor::on_pushButton_photograph_clicked()
@@ -704,6 +707,7 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 	}
 
 	ui.actionImageBinning->setDisabled(true);
+	ui.actionImageThreasholdProcess->setDisabled(true);
 	QString path=QFileDialog::getOpenFileName(this,"Open luminescence",".","tiff Files(*.tif)");
 	if (path.length()==0)
 	{
@@ -749,6 +753,7 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 		ui.LuminescenceLineEdit->setText(path);
 
 		ui.actionImageBinning->setDisabled(false);//active
+		ui.actionImageThreasholdProcess->setDisabled(false);
 	}	
 }
 
@@ -932,7 +937,7 @@ void ImagePseudoColor::clearFusionWindow()
 }
 void ImagePseudoColor::on_menuHelp_clicked()
 {
-	QMessageBox::information(this, tr("About"),QString("Author: Xin Cao\n")+QString("Version: Beta 3.3\n")+QString("Email: caoxin918@gmail.com"));  
+	QMessageBox::information(this, tr("About"),QString("Author: Xin Cao\n")+QString("Version: Beta 3.4\n")+QString("Email: caoxin918@gmail.com"));  
 }
 void ImagePseudoColor::on_menuToolsImageBinning_clicked()
 {
@@ -943,6 +948,19 @@ void ImagePseudoColor::on_menuToolsImageBinning_clicked()
 	QObject::connect(imageBinning,SIGNAL(doneWithoutBinning()),this,SLOT(receiveNoBinningSignal()));
 	imageBinning->show();
 	imageBinning->activateWindow();
+	this->setDisabled(true);
+}
+void ImagePseudoColor::on_menuToolsImageThreasholdProcess_clicked()
+{
+	imageThreshProcess=new ImageThreshProcess();
+	imageThreshProcess->setFileName(luminescneceFileName);
+	imageThreshProcess->showImage(luminescneceFileName);
+
+	QObject::connect(imageThreshProcess,SIGNAL(done()),this,SLOT(receiveThresholdProcessSignal()));
+	QObject::connect(imageThreshProcess,SIGNAL(doneWithoutProcessing()),this,SLOT(receiveNoThresholdProcessSignal()));
+
+	imageThreshProcess->show();
+	imageThreshProcess->activateWindow();
 	this->setDisabled(true);
 }
 bool ImagePseudoColor::copyFileToPath(QString sourceDir ,QString toDir, bool coverFileIfExist)
@@ -1060,6 +1078,7 @@ void ImagePseudoColor::on_pushButton_clear_clicked()
 	luminescneceFileName="";
 	photographFileName="";
 	ui.actionImageBinning->setDisabled(true);
+	ui.actionImageThreasholdProcess->setDisabled(true);
 }
 bool ImagePseudoColor::removeDirWithContent(const QString &dirName)
 {
@@ -1226,6 +1245,27 @@ void ImagePseudoColor::receivePseudocolorSignal()
 	ui.pushButtonClear->setEnabled(true);
 	ui.pushButtonQuit->setEnabled(true);
 }
+void ImagePseudoColor::receiveNoThresholdProcessSignal()
+{
+	this->setDisabled(false);
+}
+void ImagePseudoColor::receiveThresholdProcessSignal()
+{
+	substractFlag=false;
+	filterFlag=false;
+	pseudocolorFlag=false;
+	fusionFlag=false;
+	ui.luminescenceLabel->setText("luminescence");
+	delete luminescneceImage;
+	luminescneceFileName="";
+	clearFusionWindow();
+	this->setDisabled(false);
+	luminescneceFileName=".//tempFiles//thresholdProcessed.tif";
+	ui.LuminescenceLineEdit->setText(luminescneceFileName);
+	showLuminescenceData(luminescneceFileName);
+
+}
+
 void ImagePseudoColor::receiveNoBinningSignal()
 {
 	this->setDisabled(false);
@@ -1273,5 +1313,4 @@ void ImagePseudoColor::receiveBinningSignal(bool isResized)
 	
 	ui.LuminescenceLineEdit->setText(luminescneceFileName);
 	showLuminescenceData(luminescneceFileName);
-//	imageBinning=NULL;
 }

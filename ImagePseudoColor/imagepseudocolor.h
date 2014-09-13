@@ -7,6 +7,7 @@
 #include "qthread.h"
 
 #include "imagesoftwarebinningclass.h"
+#include "imagethreshprocess.h"
 
 #include "itkImage.h"
 #include "itkImageFileReader.h"
@@ -110,7 +111,7 @@ private:
 	PseudocolorThread *pseudocolorThread;
 
 	ImageSoftwareBinningclass *imageBinning;
-	
+	ImageThreshProcess* imageThreshProcess;
 	
 
 private slots:
@@ -130,6 +131,10 @@ private slots:
 	void on_menuToolsImageBinning_clicked();
 	void receiveBinningSignal(bool);
 	void receiveNoBinningSignal();
+
+	void on_menuToolsImageThreasholdProcess_clicked();
+	void receiveThresholdProcessSignal();
+	void receiveNoThresholdProcessSignal();
 
 private:
 	bool photographFlag;

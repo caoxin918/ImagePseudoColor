@@ -44,7 +44,7 @@ private:
 	int binningVSize;
 	bool saveBinningImg;
 	bool binningProcessed;
-	bool isReisedToOriginal;
+	bool isResisedToOriginal;
 
 	PixelType addImagePixel(int pixelLoacationI,int pixelLocationJ);
 	void imageBinning();
