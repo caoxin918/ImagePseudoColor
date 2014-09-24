@@ -652,10 +652,38 @@ void ImagePseudoColor::on_pushButton_photograph_clicked()
 		imwrite(".//tempFiles//originalPhotograph.tif",tempData);
 
 		Mat lumi=imread(string((const char *)luminescneceFileName.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+		
+		//以下部分将16位的图像转为8位，否则融合图像会出现乱码
+		double tempMax,tempMin;
+		minMaxLoc(tempData,&tempMin,&tempMax);
+		if(tempMax>255)
+		{
+			Mat tempData2=Mat(tempData.rows,tempData.cols,CV_8U);
+			for(int i=0;i<tempData2.rows;i++)
+				for(int j=0;j<tempData2.cols;j++)
+					tempData2.at<unsigned char>(i,j)=0;
+
+			double ratio=(tempMax-tempMin)/255;
+			for (int i=0;i<tempData2.rows;i++)
+			{
+				for (int j=0;j<tempData2.cols;j++)
+				{
+					tempData2.at<unsigned char>(i,j)=(unsigned char)((tempData.at<PixelType>(i,j)-tempMin)/ratio);
+				}
+			}
+			imwrite(".//tempFiles//originalPhotograph.tif",tempData2);
+			photographFileName=".//tempFiles//originalPhotograph.tif";
+		}
+
+
+
+		//End
+		
 		if(tempData.size!=lumi.size)
 		{
 			Mat binningWithResizeImag;
-			cv::resize(tempData, binningWithResizeImag, Size(lumi.rows,lumi.cols));
+			Mat tempData3=imread(string((const char *)photographFileName.toLocal8Bit()),CV_LOAD_IMAGE_ANYCOLOR|CV_LOAD_IMAGE_ANYDEPTH);
+			cv::resize(tempData3, binningWithResizeImag, Size(lumi.rows,lumi.cols));
 			imwrite(".//tempFiles//photographImageResize.tif",binningWithResizeImag);
 			photographFileName=".//tempFiles//photographImageResize.tif";
 		}
@@ -754,6 +782,7 @@ void ImagePseudoColor::on_pushButton_luminescence_clicked()
 
 		ui.actionImageBinning->setDisabled(false);//active
 		ui.actionImageThreasholdProcess->setDisabled(false);
+
 	}	
 }
 
